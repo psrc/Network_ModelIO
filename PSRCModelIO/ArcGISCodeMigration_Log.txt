@@ -1,0 +1,9 @@
+ArcGIS Code Migration analyzer run on 9/27/2012 at 7:47 PM
+--------------------------------------------------------------
+Analyzing project: PSRCModelIO
+
+The solution platform should be set to x86 so it can run properly on 64-bit machines.
+
+-------------------------
+
+Finished analysis. Check the Warnings in the Visual Studio Error List window for migration issues. 1 migration issues found.
