@@ -86,8 +86,7 @@ eh:
         g_TblMode = g_FWS.OpenTable(strTblModeTolls)
 
         gTblModeAtt = g_FWS.OpenTable(m_layers(2))
-        '[021706] hyu: initial m_Offset value just for testing purpose.
-        'm_Offset = 1200
+        
         m_Offset = CType(Me.txtOffset.Text, Long)
         GlobalMod.inserviceyear = txtYear.Text
 

@@ -297,6 +297,9 @@ Module test
         Dim intFacType As Integer
         Dim dctWeaveLinks(5) As Dictionary(Of String, String)
         Dim sDir() As String
+        Dim switchNodes As String()
+        Dim onewayWalkLink As String
+        Dim buildOneWayReverseWalkLink As Boolean = False
         Dim sLeng As String
         Dim m_App As IApplication
         m_App = App
@@ -401,7 +404,7 @@ Module test
             bEOF = False
             For Each pair In dctEdges
 
-
+                buildOneWayReverseWalkLink = False
                 pFeat = pair.Value
 
                 lEdgeCt = lEdgeCt + 1
@@ -446,12 +449,15 @@ Module test
 
                     nodes = getIJNodes2(pFeat, sDir(i), m_Offset, dctReservedNodes)
 
+
                     'jaf--this block writes the length in miles--6 ASCII CHARS MAX LEN!
                     'jaf--(column len(miles))
 
                     If fVerboseLog Then WriteLogLine("nodes string=" & nodes)
 
                     sLeng = getLength2(strLayerPrefix, pFeat)
+                    'if one way and mode has w in in it, need to create reverse walk link
+                    
 
                     'jaf--lane type is derived from projects, if any
                     'jaf--assume this all works for now
@@ -479,6 +485,15 @@ Module test
 
                             lflag = getFlag2(CStr(lType(l)), sDir(i))
                             mode = getModes2(pFeat, CStr(lType(l)))
+
+                            'if one way and mode has w in in it, need to create reverse walk link. Only for One way GP lanes.
+                            If (intWays = 0 Or intWays = 1) And mode.Contains("w") And l <> 2 Then
+                                switchNodes = nodes.Split(New Char() {" "c})
+                                onewayWalkLink = "a " + CType(switchNodes(1), String) + " " + CType(switchNodes(0), String) + " " + sLeng + " wk 90 1 9 0 3 0"
+                                buildOneWayReverseWalkLink = True
+                                
+                            End If
+
                             linkType = getLinkType2(pFeat)
 
                             'jaf--all times of day buildfiles get same info up to this point
@@ -597,14 +612,28 @@ Module test
                                     If fVerboseLog Then WriteLogLine("checking VDFunc")
 
                                     'NOW assign: a iNode, jNode, length, modes, linkType, #lane, functional class
-                                    sNewFacilityType = getNewFacilityType2(pFeat)
-                                    sVDF = getVDF2(pRow, pMRow, t, sDir(i), mode, linkType, sNewFacilityType)
-                                    sCap = getLaneCap2(pRow, pMRow, sDir(i), CStr(lType(l)))
+                                    'Bus/Bat lanes New Facility Type & VDF do not Pivot of GP Link
+                                    If mode = "b" And l = 2 Then
+                                        sVDF = "9"
+                                        sNewFacilityType = "0"
+                                        sCap = 0
 
-                                    sOldFacilityType = getOldFacilityType2(pFeat)
-                                    sFFS = getSpeedLimit2(pRow, pMRow, CStr(lType(l)), sDir(i), sOldFacilityType, pFeat)
-                                    sFacType = getNewFacilityType2(pFeat)
-                                    strTOD(t) = strTOD(t) + " " + sVDF + " " + sCap + " " + sFFS + " " + sFacType
+                                        sOldFacilityType = getOldFacilityType2(pFeat)
+                                        sFFS = getSpeedLimit2(pRow, pMRow, CStr(lType(l)), sDir(i), sOldFacilityType, pFeat)
+                                        sFacType = 0
+                                        strTOD(t) = strTOD(t) + " " + sVDF + " " + sCap + " " + sFFS + " " + sFacType
+
+                                    Else
+                                        'Shadow link gets these attributes from GP link
+                                        sNewFacilityType = getNewFacilityType2(pFeat)
+                                        sVDF = getVDF2(pRow, pMRow, t, sDir(i), mode, linkType, sNewFacilityType)
+                                        sCap = getLaneCap2(pRow, pMRow, sDir(i), CStr(lType(l)))
+
+                                        sOldFacilityType = getOldFacilityType2(pFeat)
+                                        sFFS = getSpeedLimit2(pRow, pMRow, CStr(lType(l)), sDir(i), sOldFacilityType, pFeat)
+                                        sFacType = getNewFacilityType2(pFeat)
+                                        strTOD(t) = strTOD(t) + " " + sVDF + " " + sCap + " " + sFFS + " " + sFacType
+                                    End If
                                     'SEC--took out SFFS string (this attribute no longer exists in ModeAttributes
                                     'strTOD(t) = strTOD(t) + " " + sVDF + " " + sCap + " " + sFacType
                                     If Not wString = "" Then
@@ -614,6 +643,12 @@ Module test
 
                                     'SEC 010809: changed the following code so that reversibles run in both directions in the mid-day
                                     If l = 0 Then
+                                        'for oneway with a walk mode, make a walk link in the opposite direction
+                                        If buildOneWayReverseWalkLink Then
+
+                                            PrintLine(t + 1, onewayWalkLink)
+
+                                        End If
                                         If intWays = 3 And t <> 1 Then 'reversible
                                             If i = 0 Then   'IJ
                                                 If t = 0 Then PrintLine(t + 1, strTOD(t)) 'AM, MD
@@ -1130,7 +1165,7 @@ eh:
 
 
             length = length * 0.00018939393939
-            length = FormatNumber(length, 8)
+            length = FormatNumber(length, 3)
             If length < 0.01 Then
                 length = 0.01
             End If
@@ -1139,7 +1174,7 @@ eh:
             ' obj = CDec(length)
         End If
 
-        getLength2 = Left(CStr(length), 10)
+        getLength2 = CStr(length)
 
     End Function
 
@@ -1309,6 +1344,8 @@ eh:
     Private Function GetWeaveLinks2(ByVal pFeat As IFeature, ByVal pRow As IRow, ByVal pMRow As IRow, ByVal dctWLinks As Dictionary(Of String, String), ByVal dctSplitLinks As Dictionary(Of String, String), _
        ByVal dctEmme2Nodes As Dictionary(Of Long, Long), ByVal lType As String, _
        ByVal direction As String, ByVal tpd As String, ByVal lanes As Double, ByRef wNodes As String, ByRef astring As String, ByRef wString As String, ByVal dctTODWeaveLinks As Dictionary(Of Long, Long))
+        'This function returns lane attributes for weave links
+
         'pRow is attribute row in modeAttributes or tblLine or eventLine tables
         'pMRow is exclusively the row in modeAttributes
 
@@ -1342,19 +1379,21 @@ eh:
                 wNodes = CStr(jwNode) + " " + CStr(iwNode)
             End If
 
-            index = pFeat.Fields.FindField("LinkType")
+            'index = pFeat.Fields.FindField("LinkType")
             'now assign defaults to weave: length, modes, link type, lanes
-            Leng = getWeaveLen(lType) / 5280
+            'Leng = getWeaveLen(lType) / 5280
             '    lanes = getLanes(pRow, pMRow, lType, Direction, tpd)
 
             If lanes = 0 Then Exit Function
 
             If fVerboseLog Then WriteLogLine("leng of weave" + CStr(Leng))
-            If Not IsDBNull(pFeat.Value(index)) And pFeat.Value(index) > 0 Then
-                wDefault = wDefault + " " + CStr(Leng) + " " + modeWeave + " " + CStr(pFeat.Value(index)) + " " + CStr(1)
-            Else
-                wDefault = wDefault + " " + CStr(Leng) + " " + modeWeave + " 90 " + CStr(1)
-            End If
+
+            'wDefault holds the weave attributes:
+            wDefault = wDefault + " " + "0.01" + " " + modeWeave + " 90 1 10 2000 0 0"
+
+
+
+
 
             iIndex = pFeat.Fields.FindField("INode")
             jIndex = pFeat.Fields.FindField("JNode")
@@ -1378,10 +1417,11 @@ eh:
 
             'vdf, capacity, FFT, facility type
 
-            Dim sFT As String
-            sFT = pFeat.Value(pFeat.Fields.FindField("NewFacilityType"))
-            ijtemp = "1 1800 60 " & sFT
-            jitemp = "1 1800 60 " & sFT
+            ' Dim sFT As String
+            'Dim laneAtts As New clsModeAttributes(pMRow)
+            'sFT = pFeat.Value(pFeat.Fields.FindField("NewFacilityType"))
+            'ijtemp = "1 1800 60 " & sFT
+            'jitemp = "1 1800 60 " & sFT
 
 
             'Only gives WeaveLinks if it has an HOV attribute in the IJ direction for that time of day!!!!!!Need to check to see if
@@ -1397,9 +1437,9 @@ eh:
 
             If Not dctWLinks.ContainsKey(wLink) And Not dctSplitLinks.ContainsKey(wLink) Then
                 If wString = "" Then
-                    wString = "a " + CStr(iwNode) + " " + CStr(INode) + " " + wDefault + " " + ijtemp
+                    wString = "a " + CStr(iwNode) + " " + CStr(INode) + " " + wDefault
                 Else
-                    wString = wString + vbNewLine + "a " + CStr(iwNode) + " " + CStr(INode) + " " + wDefault + " " + ijtemp
+                    wString = wString + vbNewLine + "a " + CStr(iwNode) + " " + CStr(INode) + " " + wDefault
                 End If
 
                 If astring = "" Then
@@ -1409,7 +1449,7 @@ eh:
                 End If
 
                 'now write opposite
-                wString = wString + vbNewLine + "a " + CStr(INode) + " " + CStr(iwNode) + " " + wDefault + " " + jitemp
+                wString = wString + vbNewLine + "a " + CStr(INode) + " " + CStr(iwNode) + " " + wDefault
                 astring = astring + vbNewLine + CStr(INode) + " " + CStr(iwNode) + wID_Type
                 dctWLinks.Add(wLink, wLink)
             End If
@@ -1421,9 +1461,9 @@ eh:
 
             If Not dctWLinks.ContainsKey(wLink) And Not dctSplitLinks.ContainsKey(wLink) Then
                 If wString = "" Then
-                    wString = "a " + wLink + " " + wDefault + " " + ijtemp
+                    wString = "a " + wLink + " " + wDefault
                 Else
-                    wString = wString + vbNewLine + "a " + wLink + " " + wDefault + " " + ijtemp
+                    wString = wString + vbNewLine + "a " + wLink + " " + wDefault
                 End If
 
                 If astring = "" Then
@@ -1433,7 +1473,7 @@ eh:
                 End If
 
                 'now write opposite
-                wString = wString + vbNewLine + "a " + CStr(JNode) + " " + CStr(jwNode) + " " + wDefault + " " + jitemp
+                wString = wString + vbNewLine + "a " + CStr(JNode) + " " + CStr(jwNode) + " " + wDefault
                 astring = astring + vbNewLine + CStr(JNode) + " " + CStr(jwNode) + wID_Type
                 dctWLinks.Add(wLink, wLink)
             End If
@@ -1548,7 +1588,8 @@ eh:
             Else
                 Tindex = pMRow.Fields.FindField(direction + "LaneCap" + "GP")
             End If
-            If Not IsDBNull(pMRow.Value(Tindex)) And pMRow.Value(Tindex) > 0 Then
+
+            If Not IsDBNull(pMRow.Value(Tindex)) Then
                 sCap = CStr(pMRow.Value(Tindex))
             Else
                 sCap = "1800"
@@ -1747,14 +1788,7 @@ eh:
                     End If
 
             End Select
-        ElseIf FacilityType = "10" Then
-            dblSpeed = 0.00378787878787879 * dblLength
-            dblSpeed = Round(dblSpeed, 2)
-            If dblSpeed = 0 Then
-                strSpeedLimit = "0.01"
-            Else
-                strSpeedLimit = CStr(dblSpeed)
-            End If
+        
 
 
 
@@ -1868,35 +1902,7 @@ eh:
                 End Select
             End If
 
-        ElseIf FacilityType = "9" Then
-           
-                strName = pFeature.Value(pFeature.Fields.FindField("Fullname"))
-                Select Case strName
-                    Case "E-3 Busway"
-                        dblSpeed = (dblLength / 5280) * 60 / 30
-                        dblSpeed = Round(dblSpeed, 2)
-                        If dblSpeed = 0 Then
-                            strSpeedLimit = "0.01"
-                        Else
-                            strSpeedLimit = CStr(dblSpeed)
-                        End If
-                    Case "Bus Tunnel"
-                        dblSpeed = (dblLength / 5280) * 60 / 30
-                        dblSpeed = Round(dblSpeed, 2)
-                        If dblSpeed = 0 Then
-                            strSpeedLimit = "0.01"
-                        Else
-                            strSpeedLimit = CStr(dblSpeed)
-                        End If
-                    Case Else
-                        dblSpeed = (dblLength / 5280) * 60 / 30
-                        dblSpeed = Round(dblSpeed, 2)
-                        If dblSpeed = 0 Then
-                            strSpeedLimit = "0.01"
-                        Else
-                            strSpeedLimit = CStr(dblSpeed)
-                        End If
-                End Select
+        
 
 
 
@@ -1994,6 +2000,8 @@ eh:
         modeWeave = "ahijstuvbw"
         Try
 
+
+
             If pFeat.Value(2) = 204273 Then
                 xxxxx = 0
             End If
@@ -2050,6 +2058,7 @@ eh:
             Dim sSpeed As String
             Dim sCap As String
             sFT = pFeat.Value(pFeat.Fields.FindField("NewFacilityType"))
+            Dim sVDF As Integer
             ijtemp = "1 1800 60 " & sFT
             jitemp = "1 1800 60 " & sFT
 
@@ -2069,7 +2078,7 @@ eh:
                         If dctJcts.ContainsKey(CType(iwNode, Long)) Then
                             pJFeat = dctJcts.Item(CType(iwNode, Long))
                             pPoint = pJFeat.ShapeCopy
-                            dctNewJunctions.Add(iwNode, pPoint )
+                            dctNewJunctions.Add(iwNode, pPoint)
                             updateTransitLines(pPoint)
                         Else
                             pJFeat = dctJcts.Item(CType(INode, Long))
@@ -3110,6 +3119,8 @@ eh:
         Dim indexNewINodeField As Long
         Dim indexNewJNodeField As Long
         Dim indexOnewayField As Long
+        Dim indexModeField As Long
+
         indexEdgeID = edges.FindField("PSRCEdgeId")
         indexINodeField = edges.FindField("INode")
         indexJNodeField = edges.FindField("JNode")
@@ -3117,10 +3128,11 @@ eh:
         indexNewJNodeField = edges.FindField("NewJNode")
         indexOnewayField = edges.FindField("Oneway")
         indexDirectionField = edges.FindField("Direction")
-
+        indexModeField = edges.FindField("Modes")
         Dim INode As Long
         Dim JNOde As Long
         Dim oneWay As Long
+        Dim modes As String
 
 
         pFCursor = edges.Update(Nothing, False)
@@ -3128,6 +3140,7 @@ eh:
         Do Until pFeature Is Nothing
             INode = pFeature.Value(indexINodeField)
             JNOde = pFeature.Value(indexJNodeField)
+            modes = pFeature.Value(indexModeField)
             If dctReservedNodes.ContainsKey(INode) Then
                 pFeature.Value(indexNewINodeField) = dctReservedNodes.Item(INode)
             Else
@@ -3144,9 +3157,21 @@ eh:
             oneWay = pFeature.Value(indexOnewayField)
             Select Case oneWay
                 Case 0
-                    pFeature.Value(indexDirectionField) = 1
+                    'If IJ allows walk, need a JI link for walk mode
+                    If modes.Contains("w") Then
+                        pFeature.Value(indexDirectionField) = 0
+                    Else
+                        pFeature.Value(indexDirectionField) = 1
+                    End If
+
                 Case 1
-                    pFeature.Value(indexDirectionField) = -1
+                    'If JI allows walk, need a IJ link for walk mode
+                    If modes.Contains("w") Then
+                        pFeature.Value(indexDirectionField) = 0
+                    Else
+                        pFeature.Value(indexDirectionField) = -1
+                    End If
+
                 Case 2
                     pFeature.Value(indexDirectionField) = 0
 
