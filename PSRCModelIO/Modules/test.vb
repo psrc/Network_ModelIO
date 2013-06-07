@@ -1580,7 +1580,8 @@ eh:
             Tindex = pRow.Fields.FindField(direction + "LaneCap" + "GP")
         End If
 
-        If Not IsDBNull(pRow.Value(Tindex)) And pRow.Value(Tindex) > 0 Then
+
+        If pRow.Value(Tindex) > -1 Then
             sCap = CStr(pRow.Value(Tindex))
         Else
             If sType = "GP" Or sType = "HOV" Then 'If l < 2 Then
@@ -1997,7 +1998,7 @@ eh:
         Dim modeWeave As String
         Dim xxxxx As Integer
 
-        modeWeave = "ahijstuvbw"
+        modeWeave = "ashijtuvbw"
         Try
 
 
