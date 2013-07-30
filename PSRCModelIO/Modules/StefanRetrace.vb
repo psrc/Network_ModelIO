@@ -981,20 +981,20 @@ eh:
         Dim attrib(4) As String
         Try
 
-            thepath = pathnameN + "\" + filenameN + "TranAM.txt"
+            thepath = pathnameN + "\" + "am_" + filenameN
             FileOpen(1, thepath, OpenMode.Output, OpenAccess.Default, OpenShare.Shared)
             'Open thepath For Output As 1
 
-            thepath = pathnameN + "\" + filenameN + "TranMD.txt"
+            thepath = pathnameN + "\" + "md_" + filenameN
             FileOpen(2, thepath, OpenMode.Output, OpenAccess.Default, OpenShare.Shared)
             'Open thepath For Output As 2
-            thepath = pathnameN + "\" + filenameN + "TranPM.txt"
+            thepath = pathnameN + "\" + "pm_" + filenameN
             FileOpen(3, thepath, OpenMode.Output, OpenAccess.Default, OpenShare.Shared)
             'Open thepath For Output As 3
-            thepath = pathnameN + "\" + filenameN + "TranE.txt"
+            thepath = pathnameN + "\" + "ev_" + filenameN
             FileOpen(4, thepath, OpenMode.Output, OpenAccess.Default, OpenShare.Shared)
             'Open thepath For Output As 4
-            thepath = pathnameN + "\" + filenameN + "TranN.txt"
+            thepath = pathnameN + "\" + "ni_" + filenameN
             FileOpen(5, thepath, OpenMode.Output, OpenAccess.Default, OpenShare.Shared)
 
             'Open thepath For Output As 5
@@ -1434,7 +1434,7 @@ eh:
                                     Dim strSegmentMode As String
                                     strSegmentMode = pFeature.Value(pFeature.Fields.FindField("Modes"))
                                     If pTransitMode = "r" Then
-                                        stimeFuncID = 4
+                                        stimeFuncID = 5
                                     ElseIf pTransitMode = "f" Then
                                         stimeFuncID = 5
                                     ElseIf strSegmentMode = "br" Or strSegmentMode = "bwk" Or strSegmentMode = "b" Or strSegmentMode = "wkb" Then

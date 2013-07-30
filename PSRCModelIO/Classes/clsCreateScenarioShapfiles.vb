@@ -403,7 +403,7 @@ StartHere:
                     End Try
                     pPolygon = New Polygon
                     pTopoOp = pPrjFeature.Shape 'make a buffer object
-                    pPolygon = pTopoOp.Buffer(8)  'map units only which are in feet and need points here
+                    pPolygon = pTopoOp.Buffer(5)  'map units only which are in feet and need points here
 
                     pFilter = New SpatialFilter
                     With pFilter

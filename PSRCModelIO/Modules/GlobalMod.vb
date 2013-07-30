@@ -6200,11 +6200,11 @@ End Sub
         WriteLogLine("")
 
         Dim runtype(5) As String
-        runtype(0) = "AM"
-        runtype(1) = "MD"
-        runtype(2) = "PM"
-        runtype(3) = "EV"
-        runtype(4) = "NI"
+        runtype(0) = "am"
+        runtype(1) = "md"
+        runtype(2) = "pm"
+        runtype(3) = "ev"
+        runtype(4) = "ni"
 
         'Dim pStatusBar As IStatusBar
         'Dim pProgbar As IStepProgressor
@@ -6216,11 +6216,12 @@ End Sub
         Dim tempString As String
         Dim attrib(4) As String
 
-        thepath(0) = pathnameN + "\" + filenameN + "TurnPenAM.txt"
-        thepath(1) = pathnameN + "\" + filenameN + "TurnPenMD.txt"
-        thepath(2) = pathnameN + "\" + filenameN + "TurnPenPM.txt"
-        thepath(3) = pathnameN + "\" + filenameN + "TurnPenE.txt"
-        thepath(4) = pathnameN + "\" + filenameN + "TurnPenN.txt"
+        thepath(0) = pathnameN + "\" + runtype(0) + "_" + filenameN
+        thepath(1) = pathnameN + "\" + runtype(1) + "_" + filenameN
+        thepath(2) = pathnameN + "\" + runtype(2) + "_" + filenameN
+        thepath(3) = pathnameN + "\" + runtype(3) + "_" + filenameN
+        thepath(4) = pathnameN + "\" + runtype(4) + "_" + filenameN
+        'thepath(4) = pathnameN + "\" + filenameN + "TurnPenN.txt"
 
         WriteLogLine("Done with init, opening output files")
 
@@ -8105,86 +8106,86 @@ End Sub
         End With
     End Function
 
-Public Sub createParkRideFile(pathName As String)
-'on error GoTo eh
+    Public Sub createParkRideFile(pathName As String, fileName As String)
+        'on error GoTo eh
         WriteLogLine("")
         WriteLogLine("=======================================")
         WriteLogLine("createParkRideFile started " & Now())
         WriteLogLine("=======================================")
         WriteLogLine("")
 
-    Dim strOutFile As String
-    strOutFile = pathName + "\mdprcap.311"
+        Dim strOutFile As String
+        strOutFile = pathName + "\" + fileName
 
-    'get Junction layer
-    'Dim pFL As IFeatureLayer
-    Dim pFClsJct As IFeatureClass
-     pFClsJct = m_junctShp
-    Dim i As Long
+        'get Junction layer
+        'Dim pFL As IFeatureLayer
+        Dim pFClsJct As IFeatureClass
+        pFClsJct = m_junctShp
+        Dim i As Long
 
-    'Get tblModelScenario table
-    Dim pWS As IWorkspace
-     pWS = get_Workspace()
+        'Get tblModelScenario table
+        Dim pWS As IWorkspace
+        pWS = get_Workspace()
 
-    Dim pTbl As ITable
-     pTbl = get_TableClass(m_layers(16)) 'tblModelScenario
+        Dim pTbl As ITable
+        pTbl = get_TableClass(m_layers(16)) 'tblModelScenario
 
-    'get field indices
-    Dim fldSceID1 As Long, fldNodeID As Long, fldCap As Long
-    Dim fldSceID2 As Long, fldTitle As Long
+        'get field indices
+        Dim fldSceID1 As Long, fldNodeID As Long, fldCap As Long
+        Dim fldSceID2 As Long, fldTitle As Long
 
-    With pFClsJct
-        fldSceID1 = .FindField("ScenarioID")
-        fldNodeID = .FindField("Scen_Node") '("Emme2nodeID")
-        fldCap = .FindField("P_RStalls")
-    End With
+        With pFClsJct
+            fldSceID1 = .FindField("ScenarioID")
+            fldNodeID = .FindField("Scen_Node") '("Emme2nodeID")
+            fldCap = .FindField("P_RStalls")
+        End With
 
-    With pTbl
-        fldSceID2 = .FindField("Scenario_ID")
-        fldTitle = .FindField("Title")
-    End With
+        With pTbl
+            fldSceID2 = .FindField("Scenario_ID")
+            fldTitle = .FindField("Title")
+        End With
 
         WriteLogLine("Done with field setup, creating P&R Buildfile")
 
-    'Create output file
-    Dim fs As Object, F As Object
-     fs = CreateObject("Scripting.FileSystemObject")
+        'Create output file
+        Dim fs As Object, F As Object
+        fs = CreateObject("Scripting.FileSystemObject")
 
-    'Write header
-    Dim strLine As String
-     F = fs.CreateTextFile(strOutFile)
-    F.WriteLine ("t matrices")
-    F.WriteLine ("m matrix=md" & """" & "prcap" & """")
+        'Write header
+        Dim strLine As String
+        F = fs.CreateTextFile(strOutFile)
+        F.WriteLine("t matrices")
+        F.WriteLine("m matrix=md" & """" & "prcap" & """")
 
         WriteLogLine("Created P&R Buildfile and wrote header, starting selection")
 
-    'Select Park and Ride
-    Dim psort As ITableSort, pFilt As IQueryFilter
-    Dim pCs_Jct As ICursor, pRow_Jct As IRow
-    Dim pCs_Sce As ICursor, pRow_Sce As IRow
-    Dim strSceID_pre As String, strSceID As String
+        'Select Park and Ride
+        Dim psort As ITableSort, pFilt As IQueryFilter
+        Dim pCs_Jct As ICursor, pRow_Jct As IRow
+        Dim pCs_Sce As ICursor, pRow_Sce As IRow
+        Dim strSceID_pre As String, strSceID As String
 
-     pFilt = New QueryFilter
-     psort = New TableSort
-    pFilt.WhereClause = "JunctionType=7"
-    With psort
-        .Fields = "Scen_Node" ' "ScenarioID"
-        .Ascending("Scen_Node") = True '("ScenarioID") = False
-         .QueryFilter = pFilt
-         .Table = pFClsJct
+        pFilt = New QueryFilter
+        psort = New TableSort
+        pFilt.WhereClause = "JunctionType=7"
+        With psort
+            .Fields = "Scen_Node" ' "ScenarioID"
+            .Ascending("Scen_Node") = True '("ScenarioID") = False
+            .QueryFilter = pFilt
+            .Table = pFClsJct
             .Sort(Nothing)
-         pCs_Jct = .Rows
-    End With
+            pCs_Jct = .Rows
+        End With
 
         WriteLogLine("Finished selection & sort, starting iterations")
-    ' pCs = pFClsJct.Search(pFilt, False)
-     pRow_Jct = pCs_Jct.NextRow
-    strSceID_pre = ""
-    'MsgBox "Before Do createParkRideFile"
-    Do Until pRow_Jct Is Nothing
-      'MsgBox "In Do until pRow_Jct Is Nothing createParkRideFile"
-      'MsgBox "pRow_Jct.value(fldsceID1)=" & pRow_Jct.value(fldSceID1)
-      'pan problem if strSceID is null if SDE
+        ' pCs = pFClsJct.Search(pFilt, False)
+        pRow_Jct = pCs_Jct.NextRow
+        strSceID_pre = ""
+        'MsgBox "Before Do createParkRideFile"
+        Do Until pRow_Jct Is Nothing
+            'MsgBox "In Do until pRow_Jct Is Nothing createParkRideFile"
+            'MsgBox "pRow_Jct.value(fldsceID1)=" & pRow_Jct.value(fldSceID1)
+            'pan problem if strSceID is null if SDE
             If Not IsDBNull(pRow_Jct.Value(fldSceID1)) Then
                 strSceID = pRow_Jct.Value(fldSceID1)
                 If fVerboseLog Then WriteLogLine("row ScenID=" & strSceID)
@@ -8205,30 +8206,30 @@ Public Sub createParkRideFile(pathName As String)
                 End If
                 strSceID_pre = strSceID
             End If
-        
-      strLine = " all " & pRow_Jct.value(fldNodeID) & ":" & pRow_Jct.value(fldCap)
+
+            strLine = " all " & pRow_Jct.Value(fldNodeID) & ":" & pRow_Jct.Value(fldCap)
             F.WriteLine(strLine)
-      
-       pRow_Jct = pCs_Jct.NextRow
-    Loop
 
-    F.Close
-     pFilt = Nothing
-     pRow_Sce = Nothing
-     pRow_Jct = Nothing
-     pCs_Sce = Nothing
-     pCs_Jct = Nothing
-     pFClsJct = Nothing
-     pTbl = Nothing
+            pRow_Jct = pCs_Jct.NextRow
+        Loop
 
-     psort = Nothing
+        F.Close()
+        pFilt = Nothing
+        pRow_Sce = Nothing
+        pRow_Jct = Nothing
+        pCs_Sce = Nothing
+        pCs_Jct = Nothing
+        pFClsJct = Nothing
+        pTbl = Nothing
+
+        psort = Nothing
         WriteLogLine("FINISHED createParkRideFile at " & Now())
-    Exit Sub
+        Exit Sub
 eh:
         CloseLogFile("PROGRAM ERROR: " & Err.Number & ", " & Err.Description & "--GlobalMod.createParkRideFile")
         MsgBox("PROGRAM ERROR: " & Err.Number & ", " & Err.Description, , "GlobalMod.createParkRideFile")
-    'MsgBox Err.Description, vbExclamation, "createParkRideFile"
-End Sub
+        'MsgBox Err.Description, vbExclamation, "createParkRideFile"
+    End Sub
 
     Public Sub createTollsFile(ByVal pathName As String, ByVal filename As String, ByVal dctReservedNodes As Dictionary, ByVal app As IApplication, ByVal projRteFL As IFeatureLayer)
         'creates Toll buildfile(s) for Emme2

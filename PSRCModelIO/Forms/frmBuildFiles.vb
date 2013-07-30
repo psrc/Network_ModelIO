@@ -81,6 +81,12 @@ eh:
         init(m_application, txtSchema.Text)
         OpenLogFile("C:", "LogBuildFile2.txt")
 
+        'File Names:
+        Dim roadNetworkName As String = "roadway.in"
+        Dim transitName As String = "transit.in"
+        Dim turnsName As String = "turns.in"
+        Dim parkAndRideName As String = "pnr_lot_capacities.in"
+
         Dim strTblModeTolls As String
         strTblModeTolls = m_layers(9)
         g_TblMode = g_FWS.OpenTable(strTblModeTolls)
@@ -152,38 +158,39 @@ eh:
 
             WriteLogLine("Finish exporting transit lines to an interim shapefile " & Now())
 
-            Me.lblStatus.Text = "frmBuildFiles.cmdCont_Click: Writing nodes & links buildfile"
-            Me.Refresh()
+            'Me.lblStatus.Text = "frmBuildFiles.cmdCont_Click: Writing nodes & links buildfile"
+            'Me.Refresh()
 
             '[021206] hyu: sometime the iName dosn't have file extension
             'tempname = Left(iName, (leng - 4))
             tempname = Replace(iName, ".shp", "", , , vbTextCompare)
 
-            create_NetFile3(pathName, iName, pWorkspaceI, m_application)
+
+            create_NetFile3(pathName, roadNetworkName, pWorkspaceI, m_application)
         End If
 
         If chkParkRides.Checked = True Then
-            Me.lblStatus.Text = "frmBuildFiles.cmdCont_Click: Writing Park&Ride  buildfile from " & pFeatlayerIE.Name
-            Me.Refresh()
-            createParkRideFile(pathName)
+            'Me.lblStatus.Text = "frmBuildFiles.cmdCont_Click: Writing Park&Ride  buildfile from " & pFeatlayerIE.Name
+            'Me.Refresh()
+            createParkRideFile(pathName, parkAndRideName)
         End If
 
         If chkTurns.Checked = True Then
 
 
-            Me.lblStatus.Text = "frmBuildFiles.cmdCont_Click: Writing turn buildfile from " & pFeatlayerIE.Name
-            Me.Refresh()
+            'Me.lblStatus.Text = "frmBuildFiles.cmdCont_Click: Writing turn buildfile from " & pFeatlayerIE.Name
+            'Me.Refresh()
             '[021206] hyu: sometime the iName dosn't have extension
             'tempname = Left(iName, (leng - 4))
             tempname = Replace(iName, ".shp", "", , , vbTextCompare)
 
-            create_TurnFile(pathName, iName, pFeatlayerIE, CType(Me.txtYear.Text, Integer), m_turnLayer)
+            create_TurnFile(pathName, turnsName, pFeatlayerIE, CType(Me.txtYear.Text, Integer), m_turnLayer)
 
         End If
 
         If chkTolls.Checked = True Then
-            Me.lblStatus.Text = "frmBuildFiles.cmdCont_Click: Writing Toll buildfile from " & pFeatlayerIE.Name
-            Me.Refresh()
+            'Me.lblStatus.Text = "frmBuildFiles.cmdCont_Click: Writing Toll buildfile from " & pFeatlayerIE.Name
+            'Me.Refresh()
             '[021206] hyu: sometime the iName dosn't have extension
             '      tempname = Left(iName, (leng - 4))
             tempname = Replace(iName, ".shp", "", , , vbTextCompare)
@@ -192,17 +199,17 @@ eh:
 
         If chkTransit.Checked = True Then
             StefanRetrace.RetraceTransitSegments(m_application, txtYear.Text)
-            Me.lblStatus.Text = "frmBuildFiles.cmdCont_Click: Writing transit routes buildfile"
-            Me.Refresh()
+            'Me.lblStatus.Text = "frmBuildFiles.cmdCont_Click: Writing transit routes buildfile"
+            'Me.Refresh()
             '[021206] hyu: sometime the iName dosn't have extension
             '        tempname = Left(iName, (leng - 4))
             tempname = Replace(iName, ".shp", "", , , vbTextCompare)
-            StefanRetrace.create_TransitFile5(pathName, iName)
+            StefanRetrace.create_TransitFile5(pathName, transitName)
 
         End If
 
-        Me.lblStatus.Text = "BUILDFILE WRITE COMPLETED " & Now()
-        Me.Refresh()
+        'Me.lblStatus.Text = "BUILDFILE WRITE COMPLETED " & Now()
+        'Me.Refresh()
 
         Close()
         'pWSF = Nothing

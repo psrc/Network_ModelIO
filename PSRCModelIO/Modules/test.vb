@@ -69,19 +69,20 @@ Module test
         lType.Add("TR")
         lType.Add("HOV")
         lType.Add("TK")
-        timePd.Add("AM")
-        timePd.Add("MD")
-        timePd.Add("PM")
-        timePd.Add("EV")
-        timePd.Add("NI")
+        timePd.Add("am")
+        timePd.Add("md")
+        timePd.Add("pm")
+        timePd.Add("ev")
+        timePd.Add("ni")
         mydate = Date.Now
 
 
         For t = 0 To 4
-            pathTOD(t) = pathnameN + "\" + filenameN + CStr(timePd(t)) + ".txt"
+            'pathTOD(t) = pathnameN + "\" + filenameN + CStr(timePd(t)) + ".txt"
+            pathTOD(t) = pathnameN + "\" + CStr(timePd(t)) + "_" + filenameN
             FileClose(t + 1)
             FileOpen(t + 1, pathTOD(t), OpenMode.Output, OpenAccess.Default, OpenShare.Shared)
-            PrintLine((t + 1), "c Exported AM Network File from ArcMap /Emme/2 Interface: " + CStr(mydate))
+            PrintLine((t + 1), "c Exported " + (timePd(t)) + " Network File from ArcMap /Emme/2 Interface: " + CStr(mydate))
             PrintLine((t + 1), "t nodes init")
         Next t
         attribname = pathnameN + "\" + filenameN + "Attr.txt"

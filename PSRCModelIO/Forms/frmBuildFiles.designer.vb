@@ -22,29 +22,28 @@ Partial Class frmBuildFiles
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
-        Me.txtOffset = New System.Windows.Forms.TextBox
-        Me.txtYear = New System.Windows.Forms.TextBox
-        Me.txtFile = New System.Windows.Forms.TextBox
-        Me.SaveFileDialog1 = New System.Windows.Forms.SaveFileDialog
-        Me.btnOpenFile = New System.Windows.Forms.Button
-        Me.Label1 = New System.Windows.Forms.Label
-        Me.Label2 = New System.Windows.Forms.Label
-        Me.Label3 = New System.Windows.Forms.Label
-        Me.btnContinue = New System.Windows.Forms.Button
-        Me.btnExit = New System.Windows.Forms.Button
-        Me.lblStatus = New System.Windows.Forms.Label
-        Me.txtSchema = New System.Windows.Forms.TextBox
-        Me.Label4 = New System.Windows.Forms.Label
-        Me.chkNetwork = New System.Windows.Forms.CheckBox
-        Me.GroupBox1 = New System.Windows.Forms.GroupBox
-        Me.chkTransit = New System.Windows.Forms.CheckBox
-        Me.chkTolls = New System.Windows.Forms.CheckBox
-        Me.chkTurns = New System.Windows.Forms.CheckBox
-        Me.chkParkRides = New System.Windows.Forms.CheckBox
-        Me.rdoOldTAZ = New System.Windows.Forms.RadioButton
-        Me.rdoNewTAZ = New System.Windows.Forms.RadioButton
-        Me.Label5 = New System.Windows.Forms.Label
-        Me.chkExportShapefiles = New System.Windows.Forms.CheckBox
+        Me.txtOffset = New System.Windows.Forms.TextBox()
+        Me.txtYear = New System.Windows.Forms.TextBox()
+        Me.txtFile = New System.Windows.Forms.TextBox()
+        Me.SaveFileDialog1 = New System.Windows.Forms.SaveFileDialog()
+        Me.btnOpenFile = New System.Windows.Forms.Button()
+        Me.Label1 = New System.Windows.Forms.Label()
+        Me.Label2 = New System.Windows.Forms.Label()
+        Me.Label3 = New System.Windows.Forms.Label()
+        Me.btnContinue = New System.Windows.Forms.Button()
+        Me.btnExit = New System.Windows.Forms.Button()
+        Me.txtSchema = New System.Windows.Forms.TextBox()
+        Me.Label4 = New System.Windows.Forms.Label()
+        Me.chkNetwork = New System.Windows.Forms.CheckBox()
+        Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.chkExportShapefiles = New System.Windows.Forms.CheckBox()
+        Me.chkTransit = New System.Windows.Forms.CheckBox()
+        Me.chkTolls = New System.Windows.Forms.CheckBox()
+        Me.chkTurns = New System.Windows.Forms.CheckBox()
+        Me.chkParkRides = New System.Windows.Forms.CheckBox()
+        Me.rdoOldTAZ = New System.Windows.Forms.RadioButton()
+        Me.rdoNewTAZ = New System.Windows.Forms.RadioButton()
+        Me.Label5 = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -54,7 +53,7 @@ Partial Class frmBuildFiles
         Me.txtOffset.Name = "txtOffset"
         Me.txtOffset.Size = New System.Drawing.Size(100, 20)
         Me.txtOffset.TabIndex = 0
-        Me.txtOffset.Text = "1200"
+        Me.txtOffset.Text = "4000"
         '
         'txtYear
         '
@@ -126,15 +125,6 @@ Partial Class frmBuildFiles
         Me.btnExit.Text = "Exit"
         Me.btnExit.UseVisualStyleBackColor = True
         '
-        'lblStatus
-        '
-        Me.lblStatus.AutoSize = True
-        Me.lblStatus.Location = New System.Drawing.Point(12, 292)
-        Me.lblStatus.Name = "lblStatus"
-        Me.lblStatus.Size = New System.Drawing.Size(39, 13)
-        Me.lblStatus.TabIndex = 10
-        Me.lblStatus.Text = "Label4"
-        '
         'txtSchema
         '
         Me.txtSchema.Location = New System.Drawing.Point(99, 116)
@@ -175,7 +165,17 @@ Partial Class frmBuildFiles
         Me.GroupBox1.Size = New System.Drawing.Size(271, 106)
         Me.GroupBox1.TabIndex = 14
         Me.GroupBox1.TabStop = False
-        Me.GroupBox1.Text = "GroupBox1"
+        Me.GroupBox1.Text = "Build Options"
+        '
+        'chkExportShapefiles
+        '
+        Me.chkExportShapefiles.AutoSize = True
+        Me.chkExportShapefiles.Location = New System.Drawing.Point(135, 65)
+        Me.chkExportShapefiles.Name = "chkExportShapefiles"
+        Me.chkExportShapefiles.Size = New System.Drawing.Size(108, 17)
+        Me.chkExportShapefiles.TabIndex = 18
+        Me.chkExportShapefiles.Text = "Export Shapefiles"
+        Me.chkExportShapefiles.UseVisualStyleBackColor = True
         '
         'chkTransit
         '
@@ -220,22 +220,22 @@ Partial Class frmBuildFiles
         'rdoOldTAZ
         '
         Me.rdoOldTAZ.AutoSize = True
-        Me.rdoOldTAZ.Checked = True
         Me.rdoOldTAZ.Location = New System.Drawing.Point(36, 343)
         Me.rdoOldTAZ.Name = "rdoOldTAZ"
         Me.rdoOldTAZ.Size = New System.Drawing.Size(68, 17)
         Me.rdoOldTAZ.TabIndex = 16
-        Me.rdoOldTAZ.TabStop = True
         Me.rdoOldTAZ.Text = "Old TAZ "
         Me.rdoOldTAZ.UseVisualStyleBackColor = True
         '
         'rdoNewTAZ
         '
         Me.rdoNewTAZ.AutoSize = True
+        Me.rdoNewTAZ.Checked = True
         Me.rdoNewTAZ.Location = New System.Drawing.Point(36, 366)
         Me.rdoNewTAZ.Name = "rdoNewTAZ"
         Me.rdoNewTAZ.Size = New System.Drawing.Size(71, 17)
         Me.rdoNewTAZ.TabIndex = 17
+        Me.rdoNewTAZ.TabStop = True
         Me.rdoNewTAZ.Text = "New TAZ"
         Me.rdoNewTAZ.UseVisualStyleBackColor = True
         '
@@ -248,16 +248,6 @@ Partial Class frmBuildFiles
         Me.Label5.TabIndex = 18
         Me.Label5.Text = "Choose TAZ Structure:"
         '
-        'chkExportShapefiles
-        '
-        Me.chkExportShapefiles.AutoSize = True
-        Me.chkExportShapefiles.Location = New System.Drawing.Point(135, 65)
-        Me.chkExportShapefiles.Name = "chkExportShapefiles"
-        Me.chkExportShapefiles.Size = New System.Drawing.Size(108, 17)
-        Me.chkExportShapefiles.TabIndex = 18
-        Me.chkExportShapefiles.Text = "Export Shapefiles"
-        Me.chkExportShapefiles.UseVisualStyleBackColor = True
-        '
         'frmBuildFiles
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -269,7 +259,6 @@ Partial Class frmBuildFiles
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.Label4)
         Me.Controls.Add(Me.txtSchema)
-        Me.Controls.Add(Me.lblStatus)
         Me.Controls.Add(Me.btnExit)
         Me.Controls.Add(Me.btnContinue)
         Me.Controls.Add(Me.Label3)
@@ -297,7 +286,6 @@ Partial Class frmBuildFiles
     Friend WithEvents Label3 As System.Windows.Forms.Label
     Friend WithEvents btnContinue As System.Windows.Forms.Button
     Friend WithEvents btnExit As System.Windows.Forms.Button
-    Friend WithEvents lblStatus As System.Windows.Forms.Label
     Friend WithEvents txtSchema As System.Windows.Forms.TextBox
     Friend WithEvents Label4 As System.Windows.Forms.Label
     Friend WithEvents chkNetwork As System.Windows.Forms.CheckBox

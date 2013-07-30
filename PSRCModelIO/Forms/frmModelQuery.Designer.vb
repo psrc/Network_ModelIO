@@ -22,35 +22,35 @@ Partial Class frmModelQuery
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
-        Me.components = New System.ComponentModel.Container
-        Me.GroupBox1 = New System.Windows.Forms.GroupBox
-        Me.txtSchema = New System.Windows.Forms.TextBox
-        Me.Label6 = New System.Windows.Forms.Label
-        Me.Label5 = New System.Windows.Forms.Label
-        Me.btnOpenFBD1 = New System.Windows.Forms.Button
-        Me.txtOutPutDir = New System.Windows.Forms.TextBox
-        Me.GroupBox2 = New System.Windows.Forms.GroupBox
-        Me.chkFT = New System.Windows.Forms.CheckBox
-        Me.cmbFC = New System.Windows.Forms.CheckedListBox
-        Me.ckcFC = New System.Windows.Forms.CheckBox
-        Me.ckcActive = New System.Windows.Forms.CheckBox
-        Me.ckcPseudo = New System.Windows.Forms.CheckBox
-        Me.chkDisolveOnly = New System.Windows.Forms.CheckBox
-        Me.txtOffset = New System.Windows.Forms.TextBox
-        Me.Label4 = New System.Windows.Forms.Label
-        Me.txtDesc = New System.Windows.Forms.TextBox
-        Me.Label3 = New System.Windows.Forms.Label
-        Me.txtTitle = New System.Windows.Forms.TextBox
-        Me.Label2 = New System.Windows.Forms.Label
-        Me.txtYear = New System.Windows.Forms.TextBox
-        Me.Label1 = New System.Windows.Forms.Label
-        Me.btnOK = New System.Windows.Forms.Button
-        Me.btnCancel = New System.Windows.Forms.Button
-        Me.FolderBrowserDialog1 = New System.Windows.Forms.FolderBrowserDialog
+        Me.components = New System.ComponentModel.Container()
+        Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtSchema = New System.Windows.Forms.TextBox()
+        Me.Label6 = New System.Windows.Forms.Label()
+        Me.Label5 = New System.Windows.Forms.Label()
+        Me.btnOpenFBD1 = New System.Windows.Forms.Button()
+        Me.txtOutPutDir = New System.Windows.Forms.TextBox()
+        Me.GroupBox2 = New System.Windows.Forms.GroupBox()
+        Me.chkFT = New System.Windows.Forms.CheckBox()
+        Me.cmbFC = New System.Windows.Forms.CheckedListBox()
+        Me.ckcFC = New System.Windows.Forms.CheckBox()
+        Me.ckcActive = New System.Windows.Forms.CheckBox()
+        Me.ckcPseudo = New System.Windows.Forms.CheckBox()
+        Me.chkDisolveOnly = New System.Windows.Forms.CheckBox()
+        Me.txtOffset = New System.Windows.Forms.TextBox()
+        Me.Label4 = New System.Windows.Forms.Label()
+        Me.txtDesc = New System.Windows.Forms.TextBox()
+        Me.Label3 = New System.Windows.Forms.Label()
+        Me.txtTitle = New System.Windows.Forms.TextBox()
+        Me.Label2 = New System.Windows.Forms.Label()
+        Me.txtYear = New System.Windows.Forms.TextBox()
+        Me.Label1 = New System.Windows.Forms.Label()
+        Me.btnOK = New System.Windows.Forms.Button()
+        Me.btnCancel = New System.Windows.Forms.Button()
+        Me.FolderBrowserDialog1 = New System.Windows.Forms.FolderBrowserDialog()
         Me.BindingSource1 = New System.Windows.Forms.BindingSource(Me.components)
-        Me.Label7 = New System.Windows.Forms.Label
-        Me.rdoNewTAZ = New System.Windows.Forms.RadioButton
-        Me.rdoOldTAZ = New System.Windows.Forms.RadioButton
+        Me.Label7 = New System.Windows.Forms.Label()
+        Me.rdoNewTAZ = New System.Windows.Forms.RadioButton()
+        Me.rdoOldTAZ = New System.Windows.Forms.RadioButton()
         Me.GroupBox1.SuspendLayout()
         Me.GroupBox2.SuspendLayout()
         CType(Me.BindingSource1, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -87,7 +87,7 @@ Partial Class frmModelQuery
         Me.txtSchema.Name = "txtSchema"
         Me.txtSchema.Size = New System.Drawing.Size(162, 24)
         Me.txtSchema.TabIndex = 13
-        Me.txtSchema.Text = "sde_ModelIO.DBO."
+        Me.txtSchema.Text = "sde.SDE."
         '
         'Label6
         '
@@ -205,7 +205,7 @@ Partial Class frmModelQuery
         Me.txtOffset.Name = "txtOffset"
         Me.txtOffset.Size = New System.Drawing.Size(162, 24)
         Me.txtOffset.TabIndex = 7
-        Me.txtOffset.Text = "1200"
+        Me.txtOffset.Text = "4000"
         '
         'Label4
         '
@@ -300,22 +300,22 @@ Partial Class frmModelQuery
         'rdoNewTAZ
         '
         Me.rdoNewTAZ.AutoSize = True
+        Me.rdoNewTAZ.Checked = True
         Me.rdoNewTAZ.Location = New System.Drawing.Point(73, 666)
         Me.rdoNewTAZ.Name = "rdoNewTAZ"
         Me.rdoNewTAZ.Size = New System.Drawing.Size(71, 17)
         Me.rdoNewTAZ.TabIndex = 20
+        Me.rdoNewTAZ.TabStop = True
         Me.rdoNewTAZ.Text = "New TAZ"
         Me.rdoNewTAZ.UseVisualStyleBackColor = True
         '
         'rdoOldTAZ
         '
         Me.rdoOldTAZ.AutoSize = True
-        Me.rdoOldTAZ.Checked = True
         Me.rdoOldTAZ.Location = New System.Drawing.Point(73, 643)
         Me.rdoOldTAZ.Name = "rdoOldTAZ"
         Me.rdoOldTAZ.Size = New System.Drawing.Size(68, 17)
         Me.rdoOldTAZ.TabIndex = 19
-        Me.rdoOldTAZ.TabStop = True
         Me.rdoOldTAZ.Text = "Old TAZ "
         Me.rdoOldTAZ.UseVisualStyleBackColor = True
         '
@@ -323,7 +323,7 @@ Partial Class frmModelQuery
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(446, 772)
+        Me.ClientSize = New System.Drawing.Size(446, 742)
         Me.Controls.Add(Me.Label7)
         Me.Controls.Add(Me.rdoNewTAZ)
         Me.Controls.Add(Me.rdoOldTAZ)
