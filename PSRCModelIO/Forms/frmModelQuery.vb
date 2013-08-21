@@ -180,8 +180,8 @@ Public Class frmModelQuery
             g_frmChkProjects.PassedIApp = m_application
             g_frmChkProjects.passed_fXchk = fXchk
             g_frmChkProjects.passedScenarioDescription = txtDesc.Text
-            g_frmChkProjects.passedScenarioDescription = txtTitle.Text
-
+            g_frmChkProjects.passedScenarioTitle = txtTitle.Text
+            'g_frmChkProjects.scen = txtTitle.Text
             Me.Dispose()
             GC.Collect()
             g_frmChkProjects.ShowDialog()

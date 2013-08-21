@@ -22,14 +22,15 @@ Partial Class frmChkProjects
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
-        Me.btnSkipProjects = New System.Windows.Forms.Button
-        Me.btnOpenProj = New System.Windows.Forms.Button
-        Me.btnExit = New System.Windows.Forms.Button
-        Me.Label1 = New System.Windows.Forms.Label
-        Me.RadioButton1 = New System.Windows.Forms.RadioButton
-        Me.RadioButton2 = New System.Windows.Forms.RadioButton
-        Me.RadioButton3 = New System.Windows.Forms.RadioButton
-        Me.rdoProjectScenario = New System.Windows.Forms.RadioButton
+        Me.btnSkipProjects = New System.Windows.Forms.Button()
+        Me.btnOpenProj = New System.Windows.Forms.Button()
+        Me.btnExit = New System.Windows.Forms.Button()
+        Me.Label1 = New System.Windows.Forms.Label()
+        Me.RadioButton1 = New System.Windows.Forms.RadioButton()
+        Me.RadioButton2 = New System.Windows.Forms.RadioButton()
+        Me.RadioButton3 = New System.Windows.Forms.RadioButton()
+        Me.rdoProjectScenario = New System.Windows.Forms.RadioButton()
+        Me.rdoCreateScenarioFromProjectSelection = New System.Windows.Forms.RadioButton()
         Me.SuspendLayout()
         '
         'btnSkipProjects
@@ -113,11 +114,23 @@ Partial Class frmChkProjects
         Me.rdoProjectScenario.Text = "Open a Project Scenario"
         Me.rdoProjectScenario.UseVisualStyleBackColor = True
         '
+        'rdoCreateScenarioFromProjectSelection
+        '
+        Me.rdoCreateScenarioFromProjectSelection.AutoSize = True
+        Me.rdoCreateScenarioFromProjectSelection.Location = New System.Drawing.Point(54, 173)
+        Me.rdoCreateScenarioFromProjectSelection.Name = "rdoCreateScenarioFromProjectSelection"
+        Me.rdoCreateScenarioFromProjectSelection.Size = New System.Drawing.Size(235, 17)
+        Me.rdoCreateScenarioFromProjectSelection.TabIndex = 8
+        Me.rdoCreateScenarioFromProjectSelection.TabStop = True
+        Me.rdoCreateScenarioFromProjectSelection.Text = "Create/Run Scenario from Selected Projects"
+        Me.rdoCreateScenarioFromProjectSelection.UseVisualStyleBackColor = True
+        '
         'frmChkProjects
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(319, 275)
+        Me.Controls.Add(Me.rdoCreateScenarioFromProjectSelection)
         Me.Controls.Add(Me.rdoProjectScenario)
         Me.Controls.Add(Me.RadioButton3)
         Me.Controls.Add(Me.RadioButton2)
@@ -140,4 +153,5 @@ Partial Class frmChkProjects
     Friend WithEvents RadioButton2 As System.Windows.Forms.RadioButton
     Friend WithEvents RadioButton3 As System.Windows.Forms.RadioButton
     Friend WithEvents rdoProjectScenario As System.Windows.Forms.RadioButton
+    Friend WithEvents rdoCreateScenarioFromProjectSelection As System.Windows.Forms.RadioButton
 End Class

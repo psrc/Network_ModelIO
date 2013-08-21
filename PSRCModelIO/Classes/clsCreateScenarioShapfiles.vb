@@ -1422,6 +1422,7 @@ eh:
             'Exit Sub
         End If
         pNewRow.Value(index) = scenarioDesc
+
         index = pScenTable.FindField("Date_Created")
         If (index = -1) Then
             WriteLogLine("Could not find field 'Date_Created' in tblModelScenario")

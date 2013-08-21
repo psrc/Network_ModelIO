@@ -568,7 +568,7 @@ eh:
         MsgBox("PROGRAM ERROR: " & Err.Number & ", " & Err.Description, , "GlobalMod.get_FeatureLayer")
 
     End Function
-
+    
 
 Public Sub SetMainVariables()
 
@@ -578,7 +578,8 @@ Public Sub SetMainVariables()
         '  pSp = m_Map.SpatialReference
   loaded = True
 
-End Sub
+    End Sub
+
 
 
 'eventually openSDEWorksapce and openTIPorMTP will be combined

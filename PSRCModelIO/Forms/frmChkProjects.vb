@@ -21,7 +21,7 @@ Imports ESRI.ArcGIS.DataSourcesGDB
 
 Imports ESRI.ArcGIS.GeoDatabaseUI
 Imports Scripting
-
+Imports ESRI.ArcGIS.ADF
 Imports ESRI.ArcGIS.DataSourcesFile
 Public Class frmChkProjects
     Private _passedFilePath As String
@@ -30,10 +30,12 @@ Public Class frmChkProjects
     Private _passed_fXchk As Boolean
     Private _passedScenarioDesc As String
     Private _passedScenarioTitle As String
+    Private _passedScenarioID As String
     Public colScenarioProjects As Collection
     Public colScenarioEvents As Collection
     Public my_clsCreateScenarioShapfiles As New clsCreateScenarioShapfiles
     Public WithEvents g_frmScenarioProjects As New frmScenarioProjects
+    Public WithEvents g_frmCreateScenarioFromSelProjects As New frmCreateScenarioFromSelProjects
     Public _scenarioName As String
     Private _passedOldTAZ As Boolean
 
@@ -2039,7 +2041,7 @@ ErrChk:
     Private Sub btnOpenProj_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnOpenProj.Click
         'right now this is just holding an empty collection to satisfy some subs in the clsCreateScenarioShapefiles.
         'Need to check to see how events are being use/handled
-
+        'Using pComReleaser As ComReleaser = New ComReleaser
         colScenarioEvents = New Collection
 
         g_FWS = getPGDws(PassedIMap)
@@ -2094,10 +2096,82 @@ ErrChk:
                 my_clsCreateScenarioShapfiles.oldTAZ = passedOldTAZ
 
                 my_clsCreateScenarioShapfiles.cSS()
-
             End If
-            
+
+        ElseIf rdoCreateScenarioFromProjectSelection.Checked = True Then
+            'g_frmScenarioProjects.PassedIApp = Me.PassedIApp
+            'g_frmScenarioProjects.PassedIMap = Me.PassedIMap
+            'g_frmScenarioProjects.passed_fXchk = Me.passed_fXchk
+            'g_frmScenarioProjects.PassedFilePath = Me.PassedFilePath
+            'g_frmCreateScenarioFromSelProjects.ShowDialog()
+
+            'If g_frmCreateScenarioFromSelProjects.DialogResult = Windows.Forms.DialogResult.OK Then
+            'get new scenario info
+            '_scenarioName = g_frmCreateScenarioFromSelProjects.scenarioName
+            'g_frmCreateScenarioFromSelProjects.Dispose()
+            'GC.Collect()
+            'get a collection of selected project ids
+            Dim colProjectsInScenario As New Collection
+            Dim pProjectsFL As IFeatureLayer2 = get_FeatureLayer10(m_layers(8), Me.PassedIMap)
+            Dim pFSel As IFeatureSelection
+            Dim pFeatureSelection As ISelection
+            Dim pFeatureCursor As IFeatureCursor
+            Dim pProjectFeature As IFeature
+            Dim indexProjRteID As Long
+            Dim pProjRteID As Long
+            Dim selectedProject As ClassPrjSelect
+
+            pFSel = pProjectsFL
+            pFSel.SelectionSet.Search(Nothing, False, pFeatureCursor)
+            pProjectFeature = pFeatureCursor.NextFeature
+            Do Until pProjectFeature Is Nothing
+                indexProjRteID = pProjectFeature.Fields.FindField("PROJRTEID")
+
+                selectedProject = New ClassPrjSelect
+                selectedProject.PrjId = pProjectFeature.Value(indexProjRteID)
+                'MsgBox "add to multiselect" + CStr(selectedprj.PrjId)
+                'GlobalMod.databaseOpen = "MTP"
+
+                colProjectsInScenario.Add(selectedProject)
+
+                pProjectFeature = pFeatureCursor.NextFeature
+
+            Loop
+
+            Dim pathName As String
+            'Me.Close()
+
+            'pathname = "D:\projects\psrc\test"
+            g_FWS = getPGDws(PassedIMap)
+
+            pathName = PassedFilePath
+            my_clsCreateScenarioShapfiles.pApp = PassedIApp
+            my_clsCreateScenarioShapfiles.pMap = PassedIMap
+            my_clsCreateScenarioShapfiles.fXchk = passed_fXchk
+            my_clsCreateScenarioShapfiles.pathnameE = pathName
+            my_clsCreateScenarioShapfiles.filenameE = "t1Edge"
+            my_clsCreateScenarioShapfiles.pathnameJ = pathName
+            my_clsCreateScenarioShapfiles.filenameJ = "t1Jct"
+            my_clsCreateScenarioShapfiles.pathnameN = pathName
+            my_clsCreateScenarioShapfiles.filenameN = "t1"
+            my_clsCreateScenarioShapfiles.prjselectedCol = colProjectsInScenario
+            my_clsCreateScenarioShapfiles.evtselectedCol = colScenarioEvents
+            my_clsCreateScenarioShapfiles.scenarioTitle = passedScenarioTitle
+            my_clsCreateScenarioShapfiles.scenarioDesc = passedScenarioDescription
+
+            'my_clsCreateScenarioShapfiles.scenarioTitle = m_ScenarioId
+            my_clsCreateScenarioShapfiles.oldTAZ = passedOldTAZ
+
+            my_clsCreateScenarioShapfiles.cSS()
+
+
+
+
+            'End If
+
         End If
+        'End Using
+
     End Sub
     Public Function FindProsepctiveScenarioProjects(ByVal intModelYear As Integer) As Collection
 
@@ -2226,4 +2300,55 @@ ErrChk:
     Private Sub g_frmScenarioProjects_Disposed(ByVal sender As Object, ByVal e As System.EventArgs) Handles g_frmScenarioProjects.Disposed
         'Me.ShowDialog()
     End Sub
+    Public Function get_FeatureLayer10(ByVal featClsname As String, pMap As IMap) As IFeatureLayer
+        'returns the feature class stated in featClsname
+        'on error GoTo eh
+
+
+
+
+        Dim pEnumLy As IEnumLayer
+
+       
+
+        pEnumLy = pMap.Layers
+
+        Dim pLy As ILayer, pFLy As IFeatureLayer
+        pLy = pEnumLy.Next
+        Do Until pLy Is Nothing
+
+            If pLy.Valid Then
+                If TypeOf pLy Is IFeatureLayer Then
+                    pFLy = pLy
+
+                    'If UCase(pFLy.FeatureClass.AliasName) = UCase(featClsname) Then
+                    If UCase(pFLy.Name) = UCase(featClsname) Then
+                        get_FeatureLayer10 = pFLy
+                        Exit Do
+
+                    End If
+                End If
+            End If
+            pLy = pEnumLy.Next
+        Loop
+
+        If Not get_FeatureLayer10 Is Nothing Then Exit Function
+
+        Dim pFeatLayer As IFeatureLayer
+        pFeatLayer = New FeatureLayer
+        Dim pfeatcls As IFeatureClass
+        pfeatcls = getFeatureClass(featClsname)
+        pFeatLayer.FeatureClass = pfeatcls
+
+        get_FeatureLayer10 = pFeatLayer
+        If pFeatLayer Is Nothing Then
+            MsgBox("Error: did not find the feature class " + featClsname)
+        End If
+
+        Exit Function
+
+eh:
+        MsgBox("PROGRAM ERROR: " & Err.Number & ", " & Err.Description, , "GlobalMod.get_FeatureLayer")
+
+    End Function
 End Class
