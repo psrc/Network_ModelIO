@@ -2045,36 +2045,31 @@ ErrChk:
         colScenarioEvents = New Collection
 
         g_FWS = getPGDws(PassedIMap)
+        Dim colProjectsInScenario As New Collection
+        Dim pathName As String
 
         If rdoProjectScenario.Checked = True Then
-            'Dim i As Integer = 2040
-            'colScenarioProjects = New Collection
-            colScenarioProjects = FindProsepctiveScenarioProjects(g_ModelYear)
 
+            'holds all the scenarios to be passed into the drop down list
+            colScenarioProjects = FindProsepctiveScenarios(g_ModelYear)
+
+            'passing some variables into the scenario form
             g_frmScenarioProjects.PassedIApp = Me.PassedIApp
             g_frmScenarioProjects.PassedIMap = Me.PassedIMap
             g_frmScenarioProjects.passed_fXchk = Me.passed_fXchk
             g_frmScenarioProjects.PassedFilePath = Me.PassedFilePath
             g_frmScenarioProjects.PassedScenarioNameCollection = colScenarioProjects
-            'Me.Hide()
+            'show the form
             g_frmScenarioProjects.ShowDialog()
 
             If g_frmScenarioProjects.DialogResult = Windows.Forms.DialogResult.OK Then
                 _scenarioName = g_frmScenarioProjects.scenarioName
-
                 g_frmScenarioProjects.Dispose()
                 GC.Collect()
-                'Me.Show()
-
-                Dim colProjectsInScenario As Collection
+                'loads the projects(ids) form the scenario into a collection
                 colProjectsInScenario = loadScenarioSelections(_scenarioName)
 
-
-
-                Dim pathName As String
-                'Me.Close()
-
-                'pathname = "D:\projects\psrc\test"
+         
                 g_FWS = getPGDws(PassedIMap)
 
                 pathName = PassedFilePath
@@ -2091,27 +2086,15 @@ ErrChk:
                 my_clsCreateScenarioShapfiles.evtselectedCol = colScenarioEvents
                 my_clsCreateScenarioShapfiles.scenarioTitle = passedScenarioTitle
                 my_clsCreateScenarioShapfiles.scenarioTitle = passedScenarioDescription
-
                 my_clsCreateScenarioShapfiles.scenarioTitle = m_ScenarioId
                 my_clsCreateScenarioShapfiles.oldTAZ = passedOldTAZ
-
+                'start building scenario edges:
                 my_clsCreateScenarioShapfiles.cSS()
             End If
 
+            'Use selected projects to run and create scenario:
         ElseIf rdoCreateScenarioFromProjectSelection.Checked = True Then
-            'g_frmScenarioProjects.PassedIApp = Me.PassedIApp
-            'g_frmScenarioProjects.PassedIMap = Me.PassedIMap
-            'g_frmScenarioProjects.passed_fXchk = Me.passed_fXchk
-            'g_frmScenarioProjects.PassedFilePath = Me.PassedFilePath
-            'g_frmCreateScenarioFromSelProjects.ShowDialog()
-
-            'If g_frmCreateScenarioFromSelProjects.DialogResult = Windows.Forms.DialogResult.OK Then
-            'get new scenario info
-            '_scenarioName = g_frmCreateScenarioFromSelProjects.scenarioName
-            'g_frmCreateScenarioFromSelProjects.Dispose()
-            'GC.Collect()
-            'get a collection of selected project ids
-            Dim colProjectsInScenario As New Collection
+           
             Dim pProjectsFL As IFeatureLayer2 = get_FeatureLayer10(m_layers(8), Me.PassedIMap)
             Dim pFSel As IFeatureSelection
             Dim pFeatureSelection As ISelection
@@ -2121,9 +2104,11 @@ ErrChk:
             Dim pProjRteID As Long
             Dim selectedProject As ClassPrjSelect
 
+            'get the selection set of projects (projects selected in ArcMap to build/run a new scenario
             pFSel = pProjectsFL
             pFSel.SelectionSet.Search(Nothing, False, pFeatureCursor)
             pProjectFeature = pFeatureCursor.NextFeature
+            'loads the projects(ids) form the selected projects into a collection
             Do Until pProjectFeature Is Nothing
                 indexProjRteID = pProjectFeature.Fields.FindField("PROJRTEID")
 
@@ -2138,10 +2123,6 @@ ErrChk:
 
             Loop
 
-            Dim pathName As String
-            'Me.Close()
-
-            'pathname = "D:\projects\psrc\test"
             g_FWS = getPGDws(PassedIMap)
 
             pathName = PassedFilePath
@@ -2158,22 +2139,14 @@ ErrChk:
             my_clsCreateScenarioShapfiles.evtselectedCol = colScenarioEvents
             my_clsCreateScenarioShapfiles.scenarioTitle = passedScenarioTitle
             my_clsCreateScenarioShapfiles.scenarioDesc = passedScenarioDescription
-
-            'my_clsCreateScenarioShapfiles.scenarioTitle = m_ScenarioId
             my_clsCreateScenarioShapfiles.oldTAZ = passedOldTAZ
-
+            'start building scenario edges:
             my_clsCreateScenarioShapfiles.cSS()
 
-
-
-
-            'End If
-
         End If
-        'End Using
-
+        
     End Sub
-    Public Function FindProsepctiveScenarioProjects(ByVal intModelYear As Integer) As Collection
+    Public Function FindProsepctiveScenarios(ByVal intModelYear As Integer) As Collection
 
         Dim pRelClass As IRelationshipClass
         pRelClass = g_FWS.OpenRelationshipClass(g_schema & "tblProjectsInScenariosTotblModelScenario")
@@ -2198,7 +2171,7 @@ ErrChk:
         yr = intModelYear
         pCs = pTblModelScenario.Search(Nothing, False)
         pRow = pCs.NextRow
-        FindProsepctiveScenarioProjects = New Collection
+        FindProsepctiveScenarios = New Collection
         Do Until pRow Is Nothing
             keep = False
             pObjSet = pRelClass.GetObjectsRelatedToObject(pRow)
@@ -2220,7 +2193,7 @@ ErrChk:
 
                 If keep = True Then
                     'FindProsepctiveScenarioProjects = New Collection
-                    FindProsepctiveScenarioProjects.Add(pRow.Value(lIndex2))
+                    FindProsepctiveScenarios.Add(pRow.Value(lIndex2))
 
                 End If
             End If

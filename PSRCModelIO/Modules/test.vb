@@ -362,11 +362,11 @@ Module test
                     '[092710] SEC: All combinations of HOV/TR are handled in the HOV fields (coded values). No need to go check TR fields any longer
                     l = 2
                     If getAllLanes2(pRow, pMRow, CStr(lType(l))) > 0 Then
-                        If pRow.Value(pRow.Fields.FindField("IJLanesGPAM")) > 0 Or pRow.Value(pRow.Fields.FindField("JILanesGPAM")) > 0 Or pRow.Value(pMRow.Fields.FindField("IJLanesGPAM")) > 0 Or pMRow.Value(pRow.Fields.FindField("JILanesGPAM")) > 0 Then
+                        'If pRow.Value(pRow.Fields.FindField("IJLanesGPAM")) > 0 Or pRow.Value(pRow.Fields.FindField("JILanesGPAM")) > 0 Or pRow.Value(pMRow.Fields.FindField("IJLanesGPAM")) > 0 Or pMRow.Value(pRow.Fields.FindField("JILanesGPAM")) > 0 Then
 
-                            'No Time of day at this point
-                            createWeaveLink2(CStr(lType(l)), pFeat, pRow, wString, nodes, astring, dctReservedNodes, dctWeaveNodes(CType(l, String)), dctWeaveNodes2(l), dctJcts, dctEdges, pstring, dctWeaveJunctions)
-                        End If
+                        'No Time of day at this point
+                        createWeaveLink2(CStr(lType(l)), pFeat, pRow, wString, nodes, astring, dctReservedNodes, dctWeaveNodes(CType(l, String)), dctWeaveNodes2(l), dctJcts, dctEdges, pstring, dctWeaveJunctions)
+                        'End If
                     End If
 
                 End If
@@ -538,10 +538,10 @@ Module test
 
                                         nodes = ""
                                         'sec added 4/21/09. 
-                                        If pRow.Value(pRow.Fields.FindField("IJLanesGPAM")) > 0 Or pRow.Value(pRow.Fields.FindField("JILanesGPAM")) > 0 Or pRow.Value(pMRow.Fields.FindField("IJLanesGPAM")) > 0 Or pMRow.Value(pRow.Fields.FindField("JILanesGPAM")) > 0 Then
-                                            GetWeaveLinks2(pFeat, pRow, pMRow, dctWeaveLinks(t), dctSplit, dctReservedNodes, CStr(lType(l)), sDir(i), CStr(timePd(t)), lanes, nodes, astring, wString, dctTODWeaveLinks(t))
-                                            '                                length = getWeaveLen(CStr(lType(l))) / 5280 'convert feet to mile
-                                        End If
+                                        'If pRow.Value(pRow.Fields.FindField("IJLanesGPAM")) > 0 Or pRow.Value(pRow.Fields.FindField("JILanesGPAM")) > 0 Or pRow.Value(pMRow.Fields.FindField("IJLanesGPAM")) > 0 Or pMRow.Value(pRow.Fields.FindField("JILanesGPAM")) > 0 Then
+                                        GetWeaveLinks2(pFeat, pRow, pMRow, dctWeaveLinks(t), dctSplit, dctReservedNodes, CStr(lType(l)), sDir(i), CStr(timePd(t)), lanes, nodes, astring, wString, dctTODWeaveLinks(t))
+                                        '                                length = getWeaveLen(CStr(lType(l))) / 5280 'convert feet to mile
+                                        'End If
 
                                         If l <> 2 Then 'not HOV
                                             lanes = 1

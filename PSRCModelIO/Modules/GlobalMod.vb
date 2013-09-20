@@ -24,6 +24,8 @@ Imports Scripting
 
 Imports ESRI.ArcGIS.DataSourcesFile
 
+'Imports ESRI.ArcGIS.ADF
+
 
 
 Module GlobalMod
@@ -6486,14 +6488,22 @@ End Sub
         indexJNode = pInterLayerE.FeatureClass.FindField("JNode")
         indexEdgeID = pInterLayerE.FeatureClass.FindField("PSRCEdgeID")
 
+        'Using pComReleaser As New ComReleaser
+
         pHOVQF = New QueryFilter
+        'pComReleaser.ManageLifetime(pHOVQF)
         'Only want to do this to Freeways, State Routes, etc that have HOV lanes and are OnewayIJ, not reversibles
         pHOVQF.WhereClause = "HOV_I > 0 AND FacilityType < 4 And Oneway = 0"
-        pHOVFC = pInterLayerE.Search(pHOVQF, True)
+        pHOVFC = pInterLayerE.Search(pHOVQF, False)
+        'pComReleaser.ManageLifetime(pInterLayerE)
         pHOVFeat = pHOVFC.NextFeature
+
+
+
+
         Try
 
-        
+
             Do Until pHOVFeat Is Nothing
                 Dim pEdgeID
                 Dim pHOVEdgeID As Long
@@ -6518,7 +6528,7 @@ End Sub
                 pHOVINode = pHOVFeat.Value(indexINode)
                 pJNodeQF = New QueryFilter
                 pJNodeQF.WhereClause = "JNode = " & pHOVINode
-                pJNodeFeatCurs = pInterLayerE.Search(pJNodeQF, True)
+                pJNodeFeatCurs = pInterLayerE.Search(pJNodeQF, False)
                 pJNodeFeat = pJNodeFeatCurs.NextFeature
 
                 'For ramps to highways
@@ -6564,8 +6574,8 @@ End Sub
 
                     pJNodeFeat = pJNodeFeatCurs.NextFeature
                 Loop
-                System.Runtime.InteropServices.Marshal.ReleaseComObject(pJNodeFeatCurs)
-
+                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(pJNodeFeatCurs)
+                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(pModeCursor)
                 ' End If
 
                 'Dim pEdgeID
@@ -6639,7 +6649,7 @@ End Sub
 
                     pINodeFeat = pINodeFeatCurs.NextFeature
                 Loop
-                System.Runtime.InteropServices.Marshal.ReleaseComObject(pINodeFeatCurs)
+                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(pINodeFeatCurs)
 
 
 
@@ -6655,11 +6665,14 @@ End Sub
 
                 pHOVFeat = pHOVFC.NextFeature
             Loop
-            System.Runtime.InteropServices.Marshal.ReleaseComObject(pHOVFC)
+            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(pHOVFC)
+            'Marshal.FinalReleaseComObject(pHOVFC)
         Catch ex As Exception
             MessageBox.Show(ex.ToString)
 
         End Try
+        'End Using
+
 
 
 
@@ -6673,8 +6686,8 @@ End Sub
         'Close #11
         pFeatLayerE = Nothing
         pTurnLayer = Nothing
-        System.Runtime.InteropServices.Marshal.ReleaseComObject(pFCturn)
-        System.Runtime.InteropServices.Marshal.ReleaseComObject(pFCedge)
+        System.Runtime.InteropServices.Marshal.FinalReleaseComObject(pFCturn)
+        System.Runtime.InteropServices.Marshal.FinalReleaseComObject(pFCedge)
         'System.Runtime.InteropServices.Marshal.ReleaseComObject(pFCtemp)
         GC.Collect()
 
