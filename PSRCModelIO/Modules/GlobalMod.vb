@@ -6458,8 +6458,10 @@ End Sub
             'End If
 
             ' pFeature = pFeatCursor.NextFeature
+            System.Runtime.InteropServices.Marshal.ReleaseComObject(pFCedge)
         Loop
-        System.Runtime.InteropServices.Marshal.ReleaseComObject(pFeatCursor)
+        'System.Runtime.InteropServices.Marshal.ReleaseComObject(pFeatCursor)
+        System.Runtime.InteropServices.Marshal.FinalReleaseComObject(pFeatCursor)
         'SEC: 04/20/2009
         'The following code creates turn penalties to prevent traffic from going directly to a Freeway/Highway HOV Lane from an on-ramp or some other
         'facility. Best example is a ramp to freeway link where the vehicle needs to get on
@@ -8169,7 +8171,7 @@ End Sub
         Dim strLine As String
         F = fs.CreateTextFile(strOutFile)
         F.WriteLine("t matrices")
-        F.WriteLine("m matrix=md" & """" & "prcap" & """")
+        F.WriteLine("m matrix=md" & """" & "pnrcap" & """")
 
         WriteLogLine("Created P&R Buildfile and wrote header, starting selection")
 

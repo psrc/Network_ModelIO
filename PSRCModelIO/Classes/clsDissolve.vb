@@ -198,6 +198,8 @@ Public Class clsDissolve
         '[051407] jaf: use SQL with SDE but not with Access
         If strLayerPrefix = "SDE" Then
             getNodes(pTrPoints, g_PSRCJctID, dctNoThinNodes, "SUBSTRING(CAST(LineID AS CHARACTER), 2, 2) = '" & Microsoft.VisualBasic.Right(CStr(inserviceyear), 2) & "' or SUBSTRING(CAST(LineID AS CHARACTER), 2, 2) = '" & Microsoft.VisualBasic.Right(CStr(inserviceyear + 1), 2) & "'")
+            'getNodes(pTrPoints, g_PSRCJctID, dctNoThinNodes, "SUBSTRING(CAST(LineID AS CHARACTER), 2, 2) = '" & Microsoft.VisualBasic.Right(CStr(inserviceyear), 2) & "' or SUBSTRING(CAST(LineID AS CHARACTER), 2, 2) = '" & Microsoft.VisualBasic.Right(CStr(inserviceyear + 1), 2) & "' or SUBSTRING(CAST(LineID AS CHARACTER), 2, 2) = '" & Microsoft.VisualBasic.Right(CStr(inserviceyear + 1), 2) & "'")
+            'getNodes(pTrPoints, g_PSRCJctID, dctNoThinNodes, "SUBSTRING(CAST(LineID AS CHARACTER), 2, 2) = '" & Microsoft.VisualBasic.Right(CStr(inserviceyear), 2) & "' or SUBSTRING(CAST(LineID AS CHARACTER), 2, 2) = '" & Microsoft.VisualBasic.Right(CStr(inserviceyear + 1), 2) & "'" & "' or SUBSTRING(CAST(LineID AS CHARACTER), 2, 2) = '" & Microsoft.VisualBasic.Right(CStr(inserviceyear + 3), 2) & "'" & "' or SUBSTRING(CAST(LineID AS CHARACTER), 2, 2) = '" & Microsoft.VisualBasic.Right(CStr(inserviceyear + 3), 2) & "'")
             'getPRNodes pFLayerJ.FeatureClass, "Scen_Node", "P_RStalls", dctNoThinNodes
         Else
             getNodes(pTrPoints, g_PSRCJctID, dctNoThinNodes, "MID(Cstr(LineID), 2, 2) = '" & Microsoft.VisualBasic.Right(CStr(inserviceyear), 2) & "'")
@@ -269,11 +271,14 @@ Public Class clsDissolve
         pQF = New QueryFilter
         pQF2 = New QueryFilter
 
-        Try
+        'Try
 
-        
-            For lJctCt = 0 To dctJcts.Count - 1
-                GC.Collect()
+
+        For lJctCt = 0 To dctJcts.Count - 1
+            GC.Collect()
+            Try
+
+
                 If pCounter = 500 Then
                     WriteLogLine("pCounter reaches 500")
                     '[011806] pan pCounter appears to serve no purpose
@@ -284,338 +289,341 @@ Public Class clsDissolve
                     pWorkspaceEdit.StartEditing(False)
                     pWorkspaceEdit.StartEditOperation()
                 End If
-                pCounter = pCounter + 1
-                '    dnode = pJunctFeat.value(idxJunctID)
-                '    sNode = CStr(dnode)
-                sNode = sNodes(lJctCt)
-                dnode = Val(sNode)
-                match = True
-                edgesdelete = False
-                '    If dnode = 1023 Then MsgBox "here"
+            Catch ex As Exception
+                MessageBox.Show(ex.ToString)
+            End Try
+            pCounter = pCounter + 1
+            '    dnode = pJunctFeat.value(idxJunctID)
+            '    sNode = CStr(dnode)
+            sNode = sNodes(lJctCt)
+            dnode = Val(sNode)
+            match = True
+            edgesdelete = False
+            '    If dnode = 1023 Then MsgBox "here"
 
-                If Not dctNoThinNodes.Exists(sNode) Then
-                    If dctJoinEdges.Exists(sNode) Then
-                        sEdgeID = Split(dctJoinEdges.Item(sNode), ",")
+            If Not dctNoThinNodes.Exists(sNode) Then
+                If dctJoinEdges.Exists(sNode) Then
+                    sEdgeID = Split(dctJoinEdges.Item(sNode), ",")
 
-                        If UBound(sEdgeID) - LBound(sEdgeID) <> 1 Then
-                            noMergeCount = noMergeCount + 1
-                        Else '2 edges connected at this joint
-                            If dctThinEdges.Exists(sEdgeID(0)) And dctThinEdges.Exists(sEdgeID(1)) And (Not (dctNoThinEdges.Exists(sEdgeID(0)) Or dctNoThinEdges.Exists(sEdgeID(1)))) Then
+                    If UBound(sEdgeID) - LBound(sEdgeID) <> 1 Then
+                        noMergeCount = noMergeCount + 1
+                    Else '2 edges connected at this joint
+                        If dctThinEdges.Exists(sEdgeID(0)) And dctThinEdges.Exists(sEdgeID(1)) And (Not (dctNoThinEdges.Exists(sEdgeID(0)) Or dctNoThinEdges.Exists(sEdgeID(1)))) Then
 
-                                '[061907] jaf: if the two edge ID's are equal we have a problem...
-                                If sEdgeID(0) = sEdgeID(1) Then
-                                    WriteLogLine("Dissolve found EdgeID=" & sEdgeID(0) & " CONNECTED TO ITSELF")
-                                Else
-                                    '[061907] jaf: the two edges are NOT the same, OK to proceed
-                                    pFeat2 = dctEdgeID.Item(sEdgeID(0))
-                                    pNextFeat = dctEdgeID.Item(sEdgeID(1))
+                            '[061907] jaf: if the two edge ID's are equal we have a problem...
+                            If sEdgeID(0) = sEdgeID(1) Then
+                                WriteLogLine("Dissolve found EdgeID=" & sEdgeID(0) & " CONNECTED TO ITSELF")
+                            Else
+                                '[061907] jaf: the two edges are NOT the same, OK to proceed
+                                pFeat2 = dctEdgeID.Item(sEdgeID(0))
+                                pNextFeat = dctEdgeID.Item(sEdgeID(1))
 
-                                    If Not (pFeat2 Is Nothing Or pNextFeat Is Nothing) Then
-                                        WriteLogLine("potential dnode " & CStr(dnode) & "  " & Now)
-                                        'now check if junction really real
-                                        '                    Set pFeat2 = m_edgeShp.GetFeature(Val(sEdgeID(0)))
-                                        '                    Set pNextFeat = m_edgeShp.GetFeature(Val(sEdgeID(1)))
-                                        dir = False
-                                        If pFeat2.Value(idxJ) = dnode Then
-                                            If pNextFeat.Value(idxJ) = dnode Then 'then deleting both jnodes
-                                                newI = pFeat2.Value(idxN)
-                                                newJ = pNextFeat.Value(idxN)
-                                            Else 'then deleting jnode of first edge and inode of second
-                                                newJ = pNextFeat.Value(idxJ)
-                                                newI = pFeat2.Value(idxN)
-                                                dir = True
-                                            End If
-                                        Else
-                                            newJ = pFeat2.Value(idxJ)
-                                            If pNextFeat.Value(idxJ) = dnode Then 'then deleting inode of first edge and jnode of second
-                                                newI = pNextFeat.Value(idxN)
-                                                dir = True
-                                            Else 'then deleting both inodes
-                                                newI = pNextFeat.Value(idxJ)
-                                            End If
+                                If Not (pFeat2 Is Nothing Or pNextFeat Is Nothing) Then
+                                    WriteLogLine("potential dnode " & CStr(dnode) & "  " & Now)
+                                    'now check if junction really real
+                                    '                    Set pFeat2 = m_edgeShp.GetFeature(Val(sEdgeID(0)))
+                                    '                    Set pNextFeat = m_edgeShp.GetFeature(Val(sEdgeID(1)))
+                                    dir = False
+                                    If pFeat2.Value(idxJ) = dnode Then
+                                        If pNextFeat.Value(idxJ) = dnode Then 'then deleting both jnodes
+                                            newI = pFeat2.Value(idxN)
+                                            newJ = pNextFeat.Value(idxN)
+                                        Else 'then deleting jnode of first edge and inode of second
+                                            newJ = pNextFeat.Value(idxJ)
+                                            newI = pFeat2.Value(idxN)
+                                            dir = True
                                         End If
-
-                                        'compare attributes to detect if we have "real" pseudonode
-                                        'pQF2.WhereClause = g_PSRCEdgeID & "=" & pFeat2.value(idxEdgeID) & " OR " & g_PSRCEdgeID & "=" & pNextFeat.value(idxEdgeID)
-
-                                        'Set pQF2 = New QueryFilter
-                                        'pQF2.WhereClause = g_PSRCEdgeID & "=" & sEdgeID(0) & " OR " & g_PSRCEdgeID & "=" & sEdgeID(1)
-                                        'Set pRow = pTC.NextRow
-                                        'Set pNextRow = pTC.NextRow
-                                        pQF2.WhereClause = g_PSRCEdgeID & "=" & sEdgeID(0)
-                                        If IsDBNull(pFeat2.Value(pFeat2.Fields.FindField("Updated1"))) Then
-                                            pTC = pTblMode.Search(pQF2, False)
-                                            pRow = pTC.NextRow
-                                        Else
-                                            pRow = getAttributesRow(pFeat2, Nothing, pTblPrjEdgeAtt, pEvtLine)
-
+                                    Else
+                                        newJ = pFeat2.Value(idxJ)
+                                        If pNextFeat.Value(idxJ) = dnode Then 'then deleting inode of first edge and jnode of second
+                                            newI = pNextFeat.Value(idxN)
+                                            dir = True
+                                        Else 'then deleting both inodes
+                                            newI = pNextFeat.Value(idxJ)
                                         End If
+                                    End If
 
-                                        'End If
+                                    'compare attributes to detect if we have "real" pseudonode
+                                    'pQF2.WhereClause = g_PSRCEdgeID & "=" & pFeat2.value(idxEdgeID) & " OR " & g_PSRCEdgeID & "=" & pNextFeat.value(idxEdgeID)
 
+                                    'Set pQF2 = New QueryFilter
+                                    'pQF2.WhereClause = g_PSRCEdgeID & "=" & sEdgeID(0) & " OR " & g_PSRCEdgeID & "=" & sEdgeID(1)
+                                    'Set pRow = pTC.NextRow
+                                    'Set pNextRow = pTC.NextRow
+                                    pQF2.WhereClause = g_PSRCEdgeID & "=" & sEdgeID(0)
+                                    If IsDBNull(pFeat2.Value(pFeat2.Fields.FindField("Updated1"))) Then
+                                        pTC = pTblMode.Search(pQF2, False)
+                                        pRow = pTC.NextRow
+                                    Else
+                                        pRow = getAttributesRow(pFeat2, Nothing, pTblPrjEdgeAtt, pEvtLine)
 
-                                        pQF2.WhereClause = g_PSRCEdgeID & "=" & sEdgeID(1)
-                                        If IsDBNull(pNextFeat.Value(pFeat2.Fields.FindField("Updated1"))) Then
-                                            pTC = pTblMode.Search(pQF2, False)
-                                            pNextRow = pTC.NextRow
-                                        Else
+                                    End If
 
-
-                                            pNextRow = getAttributesRow(pNextFeat, Nothing, pTblPrjEdgeAtt, pEvtLine)
-
-
-                                        End If
-
-
-                                        '                    If dnode = 144794 Then MsgBox "here"
-                                        If pRow.Fields.FieldCount <> pNextRow.Fields.FieldCount Then
-                                            'MsgBox("not equal")
-                                        End If
+                                    'End If
 
 
-                                        If dir = True Then
-                                            For i = 1 To pRow.Fields.FieldCount - 1
-                                                'some of the attribute tables might have one less filed than mode attributes
-                                                If i <= pNextRow.Fields.FieldCount - 1 Then
-                                                    '[081208] sec: added fields dateCreated, DateLastUpdated, and LastEditor as fields that should not be compared
-                                                    If UCase(pRow.Fields.Field(i).Name) <> "PSRCEDGEID" And _
-                                                        UCase(pRow.Fields.Field(i).Name) <> "IJFFS" And UCase(pRow.Fields.Field(i).Name) <> "JIFFS" And UCase(pRow.Fields.Field(i).Name) <> "DATELASTUPDATED" And UCase(pRow.Fields.Field(i).Name) <> "DATECREATED" And UCase(pRow.Fields.Field(i).Name) <> "LASTEDITOR" Then
-
-                                                        'SEC- see if either field is null, consider this still a match for now
-
-                                                        If IsDBNull(pRow.Value(i)) Or IsDBNull(pNextRow.Value(i)) Then
+                                    pQF2.WhereClause = g_PSRCEdgeID & "=" & sEdgeID(1)
+                                    If IsDBNull(pNextFeat.Value(pFeat2.Fields.FindField("Updated1"))) Then
+                                        pTC = pTblMode.Search(pQF2, False)
+                                        pNextRow = pTC.NextRow
+                                    Else
 
 
-                                                        ElseIf (pRow.Value(i) <> pNextRow.Value(i)) Then
-                                                            match = False
-                                                            WriteLogLine(pRow.Fields.Field(i).Name + " diff")
-                                                        End If
-                                                        'End If
+                                        pNextRow = getAttributesRow(pNextFeat, Nothing, pTblPrjEdgeAtt, pEvtLine)
+
+
+                                    End If
+
+
+                                    '                    If dnode = 144794 Then MsgBox "here"
+                                    If pRow.Fields.FieldCount <> pNextRow.Fields.FieldCount Then
+                                        'MsgBox("not equal")
+                                    End If
+
+
+                                    If dir = True Then
+                                        For i = 1 To pRow.Fields.FieldCount - 1
+                                            'some of the attribute tables might have one less filed than mode attributes
+                                            If i <= pNextRow.Fields.FieldCount - 1 Then
+                                                '[081208] sec: added fields dateCreated, DateLastUpdated, and LastEditor as fields that should not be compared
+                                                If UCase(pRow.Fields.Field(i).Name) <> "PSRCEDGEID" And _
+                                                    UCase(pRow.Fields.Field(i).Name) <> "IJFFS" And UCase(pRow.Fields.Field(i).Name) <> "JIFFS" And UCase(pRow.Fields.Field(i).Name) <> "DATELASTUPDATED" And UCase(pRow.Fields.Field(i).Name) <> "DATECREATED" And UCase(pRow.Fields.Field(i).Name) <> "LASTEDITOR" Then
+
+                                                    'SEC- see if either field is null, consider this still a match for now
+
+                                                    If IsDBNull(pRow.Value(i)) Or IsDBNull(pNextRow.Value(i)) Then
+
+
+                                                    ElseIf (pRow.Value(i) <> pNextRow.Value(i)) Then
+                                                        match = False
+                                                        WriteLogLine(pRow.Fields.Field(i).Name + " diff")
                                                     End If
+                                                    'End If
                                                 End If
-                                            Next i
-                                        Else 'need to compare IJ to JI to match direction
-                                            Dim j As Long, l As Long, t As Long
-                                            For j = 0 To 1
-                                                If j = 0 Then
-                                                    dir2 = "IJ"
-                                                    dirNext = "JI"
-                                                Else
-                                                    dir2 = "JI"
-                                                    dirNext = "IJ"
-                                                End If
-
-                                                'begin attribute comparison by directions
-                                                index2 = pRow.Fields.FindField(dir2 + "SpeedLimit")
-                                                indexNext = pNextRow.Fields.FindField(dirNext + "SpeedLimit")
-                                                If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
-                                                    match = False
-                                                    WriteLogLine("dir speed diff")
-                                                End If
-                                                'not comparing FFS any more 06/16/05
-                                                'index2 = pRow.Fields.FindField(dir2 + "FFS")
-                                                ' indexnext = pNextRow.Fields.FindField(dirnext + "FFS")
-                                                ' If (pRow.value(index2) <> pNextRow.value(indexnext)) Then
-                                                '    match = False
-                                                'WriteLogLine "dir ffs diff"
-                                                ' End If
-                                                index2 = pRow.Fields.FindField(dir2 + "VDFunc")
-                                                indexNext = pNextRow.Fields.FindField(dirNext + "VDFunc")
-                                                If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
-                                                    match = False
-                                                    WriteLogLine("dir vdf diff")
-                                                End If
-
-                                                index2 = pRow.Fields.FindField(dir2 + "SideWalks")
-                                                indexNext = pNextRow.Fields.FindField(dirNext + "SideWalks")
-                                                If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
-                                                    match = False
-                                                    WriteLogLine("dir side diff")
-                                                End If
-                                                index2 = pRow.Fields.FindField(dir2 + "BikeLanes")
-                                                indexNext = pNextRow.Fields.FindField(dirNext + "BikeLanes")
-                                                If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
-                                                    match = False
-                                                    WriteLogLine("dir bike diff")
-                                                End If
-                                                For l = 0 To 3
-                                                    If l > 1 Then
-                                                        index2 = pRow.Fields.FindField(dir2 + "Lanes" + lType(l))
-                                                        indexNext = pNextRow.Fields.FindField(dirNext + "Lanes" + lType(l))
-                                                        If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
-                                                            match = False
-                                                            WriteLogLine("dir lanes diff")
-                                                        End If
-                                                    Else
-                                                        index2 = pRow.Fields.FindField(dir2 + "LaneCap" + lType(l))
-                                                        indexNext = pNextRow.Fields.FindField(dirNext + "LaneCap" + lType(l))
-                                                        If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
-                                                            match = False
-                                                            WriteLogLine("dir lanecap diff")
-                                                        End If
-                                                        For t = 0 To 4
-                                                            index2 = pRow.Fields.FindField(dir2 + "Lanes" + lType(l) + timePd(t))
-                                                            indexNext = pNextRow.Fields.FindField(dirNext + "Lanes" + lType(l) + timePd(t))
-
-                                                            If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
-                                                                match = False
-                                                                WriteLogLine("lanes diff")
-                                                            End If
-                                                        Next t
-                                                    End If
-                                                Next l
-                                            Next j
-                                            pRow = Nothing
-                                            pNextRow = Nothing
-                                        End If
-                                        'SEC- see if either field is null, consider this still a match for now
-                                        If IsDBNull(pFeat2.Value(upIndex)) Or IsDBNull(pNextFeat.Value(upIndex)) Then
-                                        ElseIf pFeat2.Value(upIndex) <> pNextFeat.Value(upIndex) Then
-                                            match = False
-                                            WriteLogLine("update diff")
-                                        End If
-                                        If IsDBNull(pFeat2.Value(idxMode)) Or IsDBNull(pNextFeat.Value(idxMode)) Then
-                                        ElseIf pFeat2.Value(idxMode) <> pNextFeat.Value(idxMode) Then
-                                            match = False
-                                            WriteLogLine("modes diff")
-                                        End If
-
-                                        If IsDBNull(pFeat2.Value(idxLT)) Or IsDBNull(pNextFeat.Value(idxLT)) Then
-                                        ElseIf pFeat2.Value(idxLT) <> pNextFeat.Value(idxLT) Then
-                                            match = False
-                                            WriteLogLine("linktype diff")
-                                        End If
-
-                                        i = pFeat2.Fields.FindField("FacilityTy")
-                                        If IsDBNull(pFeat2.Value(idxFT)) Or IsDBNull(pNextFeat.Value(idxFT)) Then
-                                        ElseIf pFeat2.Value(idxFT) <> pNextFeat.Value(idxFT) Then
-                                            match = False
-                                            WriteLogLine("fac diff")
-                                        End If
-
-
-                                        If (match = False) Then
-                                            attMismatchCount = attMismatchCount + 1
-                                        Else
-                                            WriteLogLine("found match " & Now)
-
-                                            '[073007] hyu: new appraoch to merge edges:
-                                            '[073007] hyu: consider the geometry orientation when merging two edges. Replace the old approach of using iTopologicalOperator.ConstructUnion.
-                                            pPolyline = MergeEdges(pNextFeat, pFeat2)
-
-                                            '                    Set pGeometryBag = New GeometryBag
-                                            '                    Set pGeometry = pNextFeat.ShapeCopy
-                                            '                    pGeometryBag.AddGeometry pGeometry
-                                            '                    Set pGeometry = pFeat2.ShapeCopy
-                                            '                    pGeometryBag.AddGeometry pGeometry
-                                            '
-                                            'update the merge count for the log
-                                            If dir Then
-                                                mergeCountIJ = mergeCountIJ + 1
+                                            End If
+                                        Next i
+                                    Else 'need to compare IJ to JI to match direction
+                                        Dim j As Long, l As Long, t As Long
+                                        For j = 0 To 1
+                                            If j = 0 Then
+                                                dir2 = "IJ"
+                                                dirNext = "JI"
                                             Else
-                                                mergeCountJI = mergeCountJI + 1
+                                                dir2 = "JI"
+                                                dirNext = "IJ"
                                             End If
 
-                                            'merge the edge features
-                                            '                    Set pPolyline = New Polyline
-                                            '                    Set pTopo = pPolyline
-                                            '                    pTopo.ConstructUnion pGeometryBag
-                                            pNewFeat = m_edgeShp.CreateFeature
-                                            pNewFeat.Shape = pPolyline
-                                            '                        pnewfeat.Store
-                                            pFlds = pNewFeat.Fields
-                                            For i = 1 To pFlds.FieldCount - 1
-                                                lIndex = pFeat2.Fields.FindField(pFlds.Field(i).Name)
-                                                If (lIndex <> -1) Then
-                                                    '[032006] hyu: change the if condition
-                                                    '                                If UCase(pFlds.field(i).name) = "SCEN_LINK" Then
-                                                    '                                    MsgBox 1
-                                                    '                                End If
-                                                    If (pFlds.Field(i).Type <> esriFieldType.esriFieldTypeOID And pFlds.Field(i).Type <> esriFieldType.esriFieldTypeGeometry _
-                                                        And UCase(pFlds.Field(i).Name) <> UCase("Shape")) Then
-                                                        'If (pFlds.field(i).Type <> esriFieldTypeOID And Not pFlds.field(i).Type = esriFieldTypeGeometry Or pFlds.field(i).name <> "Shape") Then
-                                                        'inode and jnode need to be set differently
-                                                        If UCase((pFlds.Field(i).Name)) = "INODE" Then
-                                                            pNewFeat.Value(i) = newI
-                                                        ElseIf UCase((pFlds.Field(i).Name)) = "JNODE" Then
-                                                            pNewFeat.Value(i) = newJ
-                                                            '[122905] pan--SHAPE.len is internal field not editable
-                                                            'ElseIf (pFlds.field(i).name = "SHAPE.len") Then
-                                                            '  pnewfeat.value(i) = pPolyline.length
-                                                            'Else
-                                                            '  pnewfeat.value(i) = pFeat2.value(lindex)
-                                                        Else
-                                                            If pNewFeat.Fields.Field(i).Editable Then pNewFeat.Value(i) = pFeat2.Value(i)
+                                            'begin attribute comparison by directions
+                                            index2 = pRow.Fields.FindField(dir2 + "SpeedLimit")
+                                            indexNext = pNextRow.Fields.FindField(dirNext + "SpeedLimit")
+                                            If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
+                                                match = False
+                                                WriteLogLine("dir speed diff")
+                                            End If
+                                            'not comparing FFS any more 06/16/05
+                                            'index2 = pRow.Fields.FindField(dir2 + "FFS")
+                                            ' indexnext = pNextRow.Fields.FindField(dirnext + "FFS")
+                                            ' If (pRow.value(index2) <> pNextRow.value(indexnext)) Then
+                                            '    match = False
+                                            'WriteLogLine "dir ffs diff"
+                                            ' End If
+                                            index2 = pRow.Fields.FindField(dir2 + "VDFunc")
+                                            indexNext = pNextRow.Fields.FindField(dirNext + "VDFunc")
+                                            If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
+                                                match = False
+                                                WriteLogLine("dir vdf diff")
+                                            End If
+
+                                            index2 = pRow.Fields.FindField(dir2 + "SideWalks")
+                                            indexNext = pNextRow.Fields.FindField(dirNext + "SideWalks")
+                                            If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
+                                                match = False
+                                                WriteLogLine("dir side diff")
+                                            End If
+                                            index2 = pRow.Fields.FindField(dir2 + "BikeLanes")
+                                            indexNext = pNextRow.Fields.FindField(dirNext + "BikeLanes")
+                                            If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
+                                                match = False
+                                                WriteLogLine("dir bike diff")
+                                            End If
+                                            For l = 0 To 3
+                                                If l > 1 Then
+                                                    index2 = pRow.Fields.FindField(dir2 + "Lanes" + lType(l))
+                                                    indexNext = pNextRow.Fields.FindField(dirNext + "Lanes" + lType(l))
+                                                    If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
+                                                        match = False
+                                                        WriteLogLine("dir lanes diff")
+                                                    End If
+                                                Else
+                                                    index2 = pRow.Fields.FindField(dir2 + "LaneCap" + lType(l))
+                                                    indexNext = pNextRow.Fields.FindField(dirNext + "LaneCap" + lType(l))
+                                                    If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
+                                                        match = False
+                                                        WriteLogLine("dir lanecap diff")
+                                                    End If
+                                                    For t = 0 To 4
+                                                        index2 = pRow.Fields.FindField(dir2 + "Lanes" + lType(l) + timePd(t))
+                                                        indexNext = pNextRow.Fields.FindField(dirNext + "Lanes" + lType(l) + timePd(t))
+
+                                                        If (pRow.Value(index2) <> pNextRow.Value(indexNext)) Then
+                                                            match = False
+                                                            WriteLogLine("lanes diff")
                                                         End If
-                                                    End If
-
+                                                    Next t
                                                 End If
-                                            Next i
+                                            Next l
+                                        Next j
+                                        pRow = Nothing
+                                        pNextRow = Nothing
+                                    End If
+                                    'SEC- see if either field is null, consider this still a match for now
+                                    If IsDBNull(pFeat2.Value(upIndex)) Or IsDBNull(pNextFeat.Value(upIndex)) Then
+                                    ElseIf pFeat2.Value(upIndex) <> pNextFeat.Value(upIndex) Then
+                                        match = False
+                                        WriteLogLine("update diff")
+                                    End If
+                                    If IsDBNull(pFeat2.Value(idxMode)) Or IsDBNull(pNextFeat.Value(idxMode)) Then
+                                    ElseIf pFeat2.Value(idxMode) <> pNextFeat.Value(idxMode) Then
+                                        match = False
+                                        WriteLogLine("modes diff")
+                                    End If
 
-                                            If IsDBNull(pNewFeat.Value(pNewFeat.Fields.FindField("SCENARIOID"))) Then
-                                                'MsgBox "Null ScenarioID in new feature",,"NonFatal Error"
-                                            End If
+                                    If IsDBNull(pFeat2.Value(idxLT)) Or IsDBNull(pNextFeat.Value(idxLT)) Then
+                                    ElseIf pFeat2.Value(idxLT) <> pNextFeat.Value(idxLT) Then
+                                        match = False
+                                        WriteLogLine("linktype diff")
+                                    End If
 
-                                            'pan Edit session incompatible with Store
-                                            'pan 12-16-05 re-inserted store and edge delete
-                                            pNewFeat.Value(pNewFeat.Fields.FindField("Dissolve")) = 1
-                                            pNewFeat.Store()
-                                            lCreatedEdges = lCreatedEdges + 1
-                                            edgesdelete = True
+                                    i = pFeat2.Fields.FindField("FacilityTy")
+                                    If IsDBNull(pFeat2.Value(idxFT)) Or IsDBNull(pNextFeat.Value(idxFT)) Then
+                                    ElseIf pFeat2.Value(idxFT) <> pNextFeat.Value(idxFT) Then
+                                        match = False
+                                        WriteLogLine("fac diff")
+                                    End If
 
-                                            updateEdgesAtJoint(dctJoinEdges, pFeat2, pNextFeat, pNewFeat)
-                                            '                        dctEdgeID.Item(sEdgeID(0)) = 1
-                                            '                        dctEdgeID.Item(sEdgeID(1)) = 1
-                                            If pFeat2.OID <= lMaxEdgeOID Then lDissolvedEdges = lDissolvedEdges + 1
-                                            If pNextFeat.OID <= lMaxEdgeOID Then lDissolvedEdges = lDissolvedEdges + 1
 
-                                            dctEdgeID.Item(sEdgeID(0)) = pNewFeat
-                                            dctEdgeID.Remove(sEdgeID(1))
+                                    If (match = False) Then
+                                        attMismatchCount = attMismatchCount + 1
+                                    Else
+                                        WriteLogLine("found match " & Now)
 
-                                            '   WriteLogLine "delete edges oid=" & pFeat2.OID & ", " & pNextFeat.OID
-                                            pFeat2.Delete()
-                                            pNextFeat.Delete()
+                                        '[073007] hyu: new appraoch to merge edges:
+                                        '[073007] hyu: consider the geometry orientation when merging two edges. Replace the old approach of using iTopologicalOperator.ConstructUnion.
+                                        pPolyline = MergeEdges(pNextFeat, pFeat2)
 
-                                            'find junction node and delete it
+                                        '                    Set pGeometryBag = New GeometryBag
+                                        '                    Set pGeometry = pNextFeat.ShapeCopy
+                                        '                    pGeometryBag.AddGeometry pGeometry
+                                        '                    Set pGeometry = pFeat2.ShapeCopy
+                                        '                    pGeometryBag.AddGeometry pGeometry
+                                        '
+                                        'update the merge count for the log
+                                        If dir Then
+                                            mergeCountIJ = mergeCountIJ + 1
+                                        Else
+                                            mergeCountJI = mergeCountJI + 1
+                                        End If
 
-                                            '[122905] pan--I changed check to gt because want to delete this junction
-                                            'If idxJunctID < 0 Then
-                                            pJunctFeat = dctJcts.Item(sNode)
-
-                                            '                        pQFj.WhereClause = g_PSRCJctID & "=" & sNode
-                                            '                        Set pFCj = m_junctShp.Search(pQFj, False)
-                                            '                        Set pJunctFeat = pFCj.NextFeature
-
-                                            If Not pJunctFeat Is Nothing Then
-                                                If fVerboseLog Then
-                                                    If idxJunctID > 0 Then
-                                                        WriteLogLine("Deleting intrmed. feature junct OID=" & pJunctFeat.OID)
+                                        'merge the edge features
+                                        '                    Set pPolyline = New Polyline
+                                        '                    Set pTopo = pPolyline
+                                        '                    pTopo.ConstructUnion pGeometryBag
+                                        pNewFeat = m_edgeShp.CreateFeature
+                                        pNewFeat.Shape = pPolyline
+                                        '                        pnewfeat.Store
+                                        pFlds = pNewFeat.Fields
+                                        For i = 1 To pFlds.FieldCount - 1
+                                            lIndex = pFeat2.Fields.FindField(pFlds.Field(i).Name)
+                                            If (lIndex <> -1) Then
+                                                '[032006] hyu: change the if condition
+                                                '                                If UCase(pFlds.field(i).name) = "SCEN_LINK" Then
+                                                '                                    MsgBox 1
+                                                '                                End If
+                                                If (pFlds.Field(i).Type <> esriFieldType.esriFieldTypeOID And pFlds.Field(i).Type <> esriFieldType.esriFieldTypeGeometry _
+                                                    And UCase(pFlds.Field(i).Name) <> UCase("Shape")) Then
+                                                    'If (pFlds.field(i).Type <> esriFieldTypeOID And Not pFlds.field(i).Type = esriFieldTypeGeometry Or pFlds.field(i).name <> "Shape") Then
+                                                    'inode and jnode need to be set differently
+                                                    If UCase((pFlds.Field(i).Name)) = "INODE" Then
+                                                        pNewFeat.Value(i) = newI
+                                                    ElseIf UCase((pFlds.Field(i).Name)) = "JNODE" Then
+                                                        pNewFeat.Value(i) = newJ
+                                                        '[122905] pan--SHAPE.len is internal field not editable
+                                                        'ElseIf (pFlds.field(i).name = "SHAPE.len") Then
+                                                        '  pnewfeat.value(i) = pPolyline.length
+                                                        'Else
+                                                        '  pnewfeat.value(i) = pFeat2.value(lindex)
                                                     Else
-                                                        WriteLogLine("Deleting intrmed. feature junctID=" & pJunctFeat.Value(idxJunctID))
+                                                        If pNewFeat.Fields.Field(i).Editable Then pNewFeat.Value(i) = pFeat2.Value(i)
                                                     End If
                                                 End If
-                                                pJunctFeat.Delete()
+
                                             End If
+                                        Next i
 
-                                            'MsgBox pSSet.count
+                                        If IsDBNull(pNewFeat.Value(pNewFeat.Fields.FindField("SCENARIOID"))) Then
+                                            'MsgBox "Null ScenarioID in new feature",,"NonFatal Error"
+                                        End If
 
-                                        End If '(match = False)
-                                    End If 'Not (pFeat2 Is Nothing Or pNextFeat Is Nothing)
-                                End If 'edge connect to itself: sEdgeID(0) = sEdgeID(1)
-                            End If  'match = true:  dctThinEdges.Exists(sEdgeID(0)) And dctThinEdges.Exists(sEdgeID(1)) ...
-                        End If 'UBound(sEdgeID) - LBound(sEdgeID) <> 1
-                    End If 'dctJoinEdges.Exists(sNode)
+                                        'pan Edit session incompatible with Store
+                                        'pan 12-16-05 re-inserted store and edge delete
+                                        pNewFeat.Value(pNewFeat.Fields.FindField("Dissolve")) = 1
+                                        pNewFeat.Store()
+                                        lCreatedEdges = lCreatedEdges + 1
+                                        edgesdelete = True
 
-                End If 'Not dctNoThinNodes.Exists(sNode)
+                                        updateEdgesAtJoint(dctJoinEdges, pFeat2, pNextFeat, pNewFeat)
+                                        '                        dctEdgeID.Item(sEdgeID(0)) = 1
+                                        '                        dctEdgeID.Item(sEdgeID(1)) = 1
+                                        If pFeat2.OID <= lMaxEdgeOID Then lDissolvedEdges = lDissolvedEdges + 1
+                                        If pNextFeat.OID <= lMaxEdgeOID Then lDissolvedEdges = lDissolvedEdges + 1
 
-                pFCj = Nothing
-                pTC = Nothing
-                pFC = Nothing
-                pFC2 = Nothing
-            Next lJctCt
-        Catch ex As Exception
-            MessageBox.Show(ex.ToString)
-        End Try
+                                        dctEdgeID.Item(sEdgeID(0)) = pNewFeat
+                                        dctEdgeID.Remove(sEdgeID(1))
+
+                                        '   WriteLogLine "delete edges oid=" & pFeat2.OID & ", " & pNextFeat.OID
+                                        pFeat2.Delete()
+                                        pNextFeat.Delete()
+
+                                        'find junction node and delete it
+
+                                        '[122905] pan--I changed check to gt because want to delete this junction
+                                        'If idxJunctID < 0 Then
+                                        pJunctFeat = dctJcts.Item(sNode)
+
+                                        '                        pQFj.WhereClause = g_PSRCJctID & "=" & sNode
+                                        '                        Set pFCj = m_junctShp.Search(pQFj, False)
+                                        '                        Set pJunctFeat = pFCj.NextFeature
+
+                                        If Not pJunctFeat Is Nothing Then
+                                            If fVerboseLog Then
+                                                If idxJunctID > 0 Then
+                                                    WriteLogLine("Deleting intrmed. feature junct OID=" & pJunctFeat.OID)
+                                                Else
+                                                    WriteLogLine("Deleting intrmed. feature junctID=" & pJunctFeat.Value(idxJunctID))
+                                                End If
+                                            End If
+                                            pJunctFeat.Delete()
+                                        End If
+
+                                        'MsgBox pSSet.count
+
+                                    End If '(match = False)
+                                End If 'Not (pFeat2 Is Nothing Or pNextFeat Is Nothing)
+                            End If 'edge connect to itself: sEdgeID(0) = sEdgeID(1)
+                        End If  'match = true:  dctThinEdges.Exists(sEdgeID(0)) And dctThinEdges.Exists(sEdgeID(1)) ...
+                    End If 'UBound(sEdgeID) - LBound(sEdgeID) <> 1
+                End If 'dctJoinEdges.Exists(sNode)
+
+            End If 'Not dctNoThinNodes.Exists(sNode)
+
+            pFCj = Nothing
+            pTC = Nothing
+            pFC = Nothing
+            pFC2 = Nothing
+        Next lJctCt
+        'Catch ex As Exception
+        'MessageBox.Show(ex.ToString)
+        'End Try
         pWorkspaceEdit.StopEditOperation()
         pWorkspaceEdit.StopEditing(True)
 

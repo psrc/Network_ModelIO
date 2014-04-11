@@ -544,7 +544,19 @@ eh:
 
         fldFromNd = pFCls.FindField(fromNode)
         fldToNd = pFCls.FindField(toNode)
-        pfldLength = pFCls.FindField("Shape.len")
+
+
+        If strLayerPrefix = "SDE" Then
+            pfldLength = pFCls.Fields.FindField("Shape.len") 'SDE
+            If pfldLength = -1 Then
+                pfldLength = pFCls.Fields.FindField("Shape.STlength()")
+
+            End If
+        Else
+            pfldLength = pFCls.Fields.FindField("Shape_Length") 'PGDB
+        End If
+        'pfldLength = pFCls.FindField("Shape.len")
+
         '    fldOneWay = pFCls.FindField(oneWay)
 
         pRelOp = pRt
@@ -1024,6 +1036,7 @@ eh:
             Dim dctAM_JI_HOV As New Dictionary(Of Long, Long)
             Dim dctMD_IJ_HOV As New Dictionary(Of Long, Long)
             Dim dctMD_JI_HOV As New Dictionary(Of Long, Long)
+            Dim dctNodeString As New Dictionary(Of Long, String)
             Dim pTblPrjEdge As ITable
             Dim pTblMode As ITable
             pTblPrjEdge = get_TableClass(m_layers(24)) 'use if future project
@@ -1071,6 +1084,7 @@ eh:
             'sort transit segment table by LineID and SegOrder, then loop through the sorted rows
             Dim pSort As ITableSort
             Dim dctTransitLine As New Dictionary(Of String, String)
+
             'dctTransitLine = New Dictionary
             pSort = New TableSort
             pQF = New QueryFilter
@@ -1106,8 +1120,11 @@ eh:
             idIndex = pTLineFCls.FindField("LineID")
             sIndex = tblTSeg.FindField("SegOrder")
             Dim x As Long
+            Dim y As Long
+
             Dim pTransitMode As String
             Dim intOperator As Integer
+            Dim prevDwtStop As String = Nothing
             'Dim intTPCounter As Integer
             Do Until pFeatTRoute Is Nothing
                 '[040307] hyu: per Jeff's email on [05/16/2006]
@@ -1256,8 +1273,10 @@ eh:
             Dim dctTransitPoints As Dictionary(Of Long, Long)
             Dim dctDwellTimes As Dictionary(Of Long, String)
             Dim dctStopDistance As Dictionary(Of Long, Long)
+
             'Dim x As Long
             x = 0
+            Dim intNodeCounter As Long = 1
             Do Until pRow Is Nothing
                 'check to see if this is a new line, if so get it's mode
                 If preLine = 0 Or preLine <> pRow.Value(pRow.Fields.FindField("LineID")) Then
@@ -1326,6 +1345,9 @@ eh:
                 Dim strDwell As String
                 Dim intPrevTN As Integer
                 Dim lngStopDistance As Long
+
+                Dim prevNodeString As String
+
                 'see if the current node is a transit point
                 Try
 
@@ -1547,33 +1569,85 @@ eh:
 
 
                                 If bPreWeave And preWNode = curWNode And curWNode <> 0 Then
-                                    writeTransitNode(lTOD, " " + CStr(nextWNode) + tempString)
+                                    'we are on hov system, write out the next node because current one has alreayd been written. We
+                                    'are one step ahead here. 
+                                    'Use next weave node, but have to make sure dwell time is right!
+                                    'if next node is a stop we need to assign it to the previous node since we are one node ahead here!
+
+                                    'writeTransitNode(lTOD, " " + CStr(nextWNode) + tempString)
+                                    If dctTransitPoints.Item(intPrevTN + 1) = pRow.Value(fldJNode) Then
+                                        'sDwtStop = " " & strDwell
+                                        'sDwtStop is set from above and should indicate a stop. We need to apply this to the previous node. 
+
+                                        
+                                        prevNodeString = dctNodeString.Item(intNodeCounter - 1)
+                                        prevNodeString = prevNodeString.Replace(LTrim(prevDwtStop), LTrim(sDwtStop))
+                                        dctNodeString.Item(intNodeCounter - 1) = prevNodeString
+
+
+                                        'Stop should not take place here. The dictionary will be updated next iteration if it is indeed a stop. 
+                                        tempString = " dwt=#.00" + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+
+                                    End If
+                                    dctNodeString.Add(intNodeCounter, " " + CStr(nextWNode) + tempString)
+                                    intNodeCounter = intNodeCounter + 1
                                     bPreWeave = True
                                 Else
-                                    writeTransitNode(lTOD, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                                    'On GP lanes, did we just get off HOV?
+                                    'If bPreWeave And pRow.Value(fldINode) = dctTransitPoints(intPrevTN) Then
+                                    'if yes, have to update last node with proper stop info:
+                                    'NodeString = dctNodeString.Item(intNodeCounter - 1)
+                                    'prevNodeString = System.Text.RegularExpressions.Regex.Replace(prevNodeString, "dwt=*....", LTrim(dctDwellTimes.Item(intTPCounter - 1)))
+
+
+                                    'prevNodeString = prevNodeString.Replace(LTrim(prevDwtStop), LTrim(dctDwellTimes.Item(intTPCounter - 1)))
+                                    'dctNodeString.Item(intNodeCounter - 1) = prevNodeString
+                                    'End If
+
+                                    'see if transit line is entering HOV/Managed lanes, if so, write out I & J Nodes of HOV:
                                     If curWNode > 0 And nextWNode > 0 Then
-                                        writeTransitNode(lTOD, " " + CStr(curWNode) + tempString)
-                                        writeTransitNode(lTOD, " " + CStr(nextWNode) + tempString)
+                                        'this is the gp node. If the next node is a stop, need to put the dwll time on the INode of the HOV, not here. 
+                                        tempString = " dwt=#.00" + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+                                        'writeTransitNode(lTOD, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                                        dctNodeString.Add(intNodeCounter, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                                        intNodeCounter = intNodeCounter + 1
+
+                                        'HOV INode of the first HOV link. Put dwell time here if the next node is a stop. 
+                                        tempString = sDwtStop + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+                                        'writeTransitNode(lTOD, " " + CStr(curWNode) + tempString)
+                                        dctNodeString.Add(intNodeCounter, " " + CStr(curWNode) + tempString)
+                                        intNodeCounter = intNodeCounter + 1
+
+                                        'HOV JNode of the first HOV link
+                                        'if next node on the next link is indeed a stop, this dictionary will get updated. 
+                                        tempString = " dwt=#.00" + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+                                        'writeTransitNode(lTOD, " " + CStr(nextWNode) + tempString)
+                                        dctNodeString.Add(intNodeCounter, " " + CStr(nextWNode) + tempString)
+                                        intNodeCounter = intNodeCounter + 1
                                         bPreWeave = True
                                     Else
                                         bPreWeave = False
+                                        'was on a GP and still is 
+                                        'writeTransitNode(lTOD, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                                        dctNodeString.Add(intNodeCounter, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                                        intNodeCounter = intNodeCounter + 1
                                     End If
                                 End If
-                                'sec 072909- fixing DWTs
-                                'lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempString
-                                lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempLastLineString
+                                    'sec 072909- fixing DWTs
+                                    'lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempString
+                                    lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempLastLineString
 
-                                preNode = curNode
-                                preWNode = nextWNode
-                                curWNode = 0
-                                nextWNode = 0
+                                    preNode = curNode
+                                    preWNode = nextWNode
+                                    curWNode = 0
+                                    nextWNode = 0
 
                             Else 'pfeature Is Nothing
-                                If i = 0 Then
-                                    WriteLogLine("Data Error: Segment " + CStr(lSegOrder) + " on transit line " + CStr(lLineID) + " underlying TransRefEdge not in service")
-                                    WriteLogLine("Skip the rest of line " & lLineID)
-                                    i = 1
-                                End If
+                                    If i = 0 Then
+                                        WriteLogLine("Data Error: Segment " + CStr(lSegOrder) + " on transit line " + CStr(lLineID) + " underlying TransRefEdge not in service")
+                                        WriteLogLine("Skip the rest of line " & lLineID)
+                                        i = 1
+                                    End If
                             End If  'Not pfeature Is Nothing
                         Else    'lUseGP <> 0
                             'GP only
@@ -1581,8 +1655,11 @@ eh:
                             'SEC 072909- fixing DWTs
                             'lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempString
                             lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempLastLineString
-                            writeTransitNode(lTOD, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                            'writeTransitNode(lTOD, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                            dctNodeString.Add(intNodeCounter, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                            intNodeCounter = intNodeCounter + 1
                             bPreWeave = False
+                            'in case we need to update the previous string
 
                             preNode = curNode
                             curNode = nextNode
@@ -1599,13 +1676,28 @@ eh:
 
 
                     'now is at the end, write the last node
-                    writeTransitNode(lTOD, lastNodeString)
+                    'writeTransitNode(lTOD, lastNodeString)
+                    dctNodeString.Add(intNodeCounter, lastNodeString)
+
+                    For y = 1 To dctNodeString.Count
+                        writeTransitNode(lTOD, dctNodeString.Item(y))
+                    Next y
+                    dctNodeString.Clear()
+                    intNodeCounter = 1
                 Else
                     If pRow.Value(fldLineId) <> lLineID Then
                         'a new transit line starts. so the unwritten last node of the previous line should be written now
-                        writeTransitNode(lTOD, lastNodeString)
+                        'writeTransitNode(lTOD, lastNodeString)
+                        dctNodeString.Add(intNodeCounter, lastNodeString)
+                        For y = 1 To dctNodeString.Count
+                            writeTransitNode(lTOD, dctNodeString.Item(y))
+                        Next y
+                        dctNodeString.Clear()
+
+                        intNodeCounter = 1
                     End If
                 End If
+                prevDwtStop = sDwtStop
             Loop
 
             'pStatusBar.HideProgressBar()

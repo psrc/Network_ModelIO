@@ -592,6 +592,14 @@ Module test
                                                     'Two lanes HOT, 3+ free
                                                     mode = "ashijtuvb"
                                                     lanes = 2
+                                                Case 14
+                                                    'One lanes HOT, No heavy/med trucks
+                                                    mode = "ashijvb"
+                                                    lanes = 1
+                                                Case 15
+                                                    'Two lanes HOT, No heavy/med trucks
+                                                    mode = "ashijvb"
+                                                    lanes = 2
 
                                             End Select
 
@@ -1152,6 +1160,10 @@ eh:
         Dim Tindex As Long
         If strLayerPrefix = "SDE" Then
             Tindex = pFeat.Fields.FindField("Shape.len") 'SDE
+            If Tindex = -1 Then
+                Tindex = pFeat.Fields.FindField("Shape.STlength()")
+
+            End If
         Else
             Tindex = pFeat.Fields.FindField("Shape_Length") 'PGDB
         End If
@@ -1611,8 +1623,17 @@ eh:
         Dim lngSpeed As Long
         Tindex = pRow.Fields.FindField(direction + "SpeedLimit")
 
+        Dim indexLengthField As Long
+        If strLayerPrefix = "SDE" Then
+            indexLengthField = pFeature.Fields.FindField("Shape.len") 'SDE
+            If indexLengthField = -1 Then
+                indexLengthField = pFeature.Fields.FindField("Shape.STlength()")
 
-        dblLength = pFeature.Value(pFeature.Fields.FindField("Shape.len"))
+            End If
+        Else
+            indexLengthField = pFeature.Fields.FindField("Shape_Length") 'PGDB
+        End If
+        dblLength = pFeature.Value(indexLengthField)
 
 
         If FacilityType = "14" Or FacilityType = "15" Then
@@ -2962,6 +2983,7 @@ eh:
 
 
         For Each pair In mAtts
+
             Dim myEdgeHOVAtts As edgeHOVAtts
             'need to redim to specify the size of the todDirection Array (which is an attribute of the edgeHOVAtts Struct)
             ReDim myEdgeHOVAtts.todDirection(4)
@@ -2969,143 +2991,41 @@ eh:
             mymodeAttsClass = New clsModeAttributes(pair.Value)
             myEdgeHOVAtts.psrcEdgeID = pair.Key
 
-
-            x = 0
-
+            For x = 0 To 4
 
 
-            If mymodeAttsClass.IJLANESHOVAM > 0 Then
-                boolIJ = True
-            End If
-            If mymodeAttsClass.JILANESHOVAM > 0 Then
-                boolJI = True
-            End If
-            If (boolIJ = False And boolJI = False) Then
-                myEdgeHOVAtts.todDirection(x) = -2
-            ElseIf boolIJ = True And boolJI = True Then
-                myEdgeHOVAtts.todDirection(x) = 0
-            ElseIf boolIJ = True And boolJI = False Then
+                If mymodeAttsClass.IJLANESHOVAM > 0 Then
+                    boolIJ = True
+                End If
+                If mymodeAttsClass.JILANESHOVAM > 0 Then
+                    boolJI = True
+                End If
+                If (boolIJ = False And boolJI = False) Then
+                    myEdgeHOVAtts.todDirection(x) = -2
+                ElseIf boolIJ = True And boolJI = True Then
+                    myEdgeHOVAtts.todDirection(x) = 0
+                ElseIf boolIJ = True And boolJI = False Then
 
-                myEdgeHOVAtts.todDirection(x) = 1
+                    myEdgeHOVAtts.todDirection(x) = 1
 
-            Else
-                myEdgeHOVAtts.todDirection(x) = -1
-            End If
-            'myEdgeHOVAtts.psrcEdgeID = pair.Key
-            'dctHOVAtts.Add(pair.Key, myEdgeHOVAtts)
+                Else
+                    myEdgeHOVAtts.todDirection(x) = -1
+                End If
+                'myEdgeHOVAtts.psrcEdgeID = pair.Key
+                'dctHOVAtts.Add(pair.Key, myEdgeHOVAtts)
 
-            boolIJ = False
-            boolJI = False
+                boolIJ = False
+                boolJI = False
 
-            x = 1
+            Next x
 
-            'mymodeAttsClass = New clsModeAttributes(pair.Value)
-            If mymodeAttsClass.IJLANESHOVMD > 0 Then
-                boolIJ = True
-            End If
-            If mymodeAttsClass.JILANESHOVMD > 0 Then
-                boolJI = True
-            End If
-            If (boolIJ = False And boolJI = False) Then
-                myEdgeHOVAtts.todDirection(x) = -2
-            ElseIf boolIJ = True And boolJI = True Then
-                myEdgeHOVAtts.todDirection(x) = 0
-            ElseIf boolIJ = True And boolJI = False Then
-
-                myEdgeHOVAtts.todDirection(x) = 1
-
-            Else
-                myEdgeHOVAtts.todDirection(x) = -1
-            End If
-            'myEdgeHOVAtts.psrcEdgeID = pair.Key
-            'dctHOVAtts.Add(pair.Key, myEdgeHOVAtts)
-
-            boolIJ = False
-            boolJI = False
-
-            x = 2
-
-            ' mymodeAttsClass = New clsModeAttributes(pair.Value)
-            If mymodeAttsClass.IJLANESHOVPM > 0 Then
-                boolIJ = True
-            End If
-            If mymodeAttsClass.JILANESHOVPM > 0 Then
-                boolJI = True
-            End If
-            If (boolIJ = False And boolJI = False) Then
-                myEdgeHOVAtts.todDirection(x) = -2
-            ElseIf boolIJ = True And boolJI = True Then
-                myEdgeHOVAtts.todDirection(x) = 0
-            ElseIf boolIJ = True And boolJI = False Then
-
-                myEdgeHOVAtts.todDirection(x) = 1
-
-            Else
-                myEdgeHOVAtts.todDirection(x) = -1
-            End If
-            'myEdgeHOVAtts.psrcEdgeID = pair.Key
-            'dctHOVAtts.Add(pair.Key, myEdgeHOVAtts)
-
-            boolIJ = False
-            boolJI = False
-
-
-            x = 3
-            'mymodeAttsClass = New clsModeAttributes(pair.Value)
-            If mymodeAttsClass.IJLANESHOVEV > 0 Then
-                boolIJ = True
-            End If
-            If mymodeAttsClass.JILANESHOVEV > 0 Then
-                boolJI = True
-            End If
-            If (boolIJ = False And boolJI = False) Then
-                myEdgeHOVAtts.todDirection(x) = -2
-            ElseIf boolIJ = True And boolJI = True Then
-                myEdgeHOVAtts.todDirection(x) = 0
-            ElseIf boolIJ = True And boolJI = False Then
-
-                myEdgeHOVAtts.todDirection(x) = 1
-
-            Else
-                myEdgeHOVAtts.todDirection(x) = -1
-            End If
-            'myEdgeHOVAtts.psrcEdgeID = pair.Key
-            'dctHOVAtts.Add(pair.Key, myEdgeHOVAtts)
-
-            boolIJ = False
-            boolJI = False
-
-            x = 4
-            'mymodeAttsClass = New clsModeAttributes(pair.Value)
-            If mymodeAttsClass.IJLANESHOVEV > 0 Then
-                boolIJ = True
-            End If
-            If mymodeAttsClass.JILANESHOVEV > 0 Then
-                boolJI = True
-            End If
-            If (boolIJ = False And boolJI = False) Then
-                myEdgeHOVAtts.todDirection(x) = -2
-            ElseIf boolIJ = True And boolJI = True Then
-                myEdgeHOVAtts.todDirection(x) = 0
-            ElseIf boolIJ = True And boolJI = False Then
-
-                myEdgeHOVAtts.todDirection(x) = 1
-
-            Else
-                myEdgeHOVAtts.todDirection(x) = -1
-            End If
             'add tod attributes for this edge to dict
             myEdgeHOVAtts.psrcEdgeID = pair.Key
             dctHOVAtts.Add(pair.Key, myEdgeHOVAtts)
 
-            boolIJ = False
-            boolJI = False
-
-
-
         Next
 
-        Return dctHOVAtts
+            Return dctHOVAtts
 
 
     End Function

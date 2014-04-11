@@ -146,7 +146,8 @@ eh:
         m_turnLayer = get_FeatureLayer3(m_layers(12))
         m_projectLayer = get_FeatureLayer3(m_layers(8))
         m_transitLayer = get_FeatureLayer3(m_layers(13))
-        Pfltransitpoints = get_FeatureLayer3("sde.SDE.TransitPoints")
+        Pfltransitpoints = get_FeatureLayer3(m_layers(23))
+        'Pfltransitpoints = get_FeatureLayer3("sde.SDE.TransitPoints")
         'user chose to do EVERYTHING
         Dim strTransitQuery As String = "InServiceDate=" & Me.txtYear.Text & " AND OutServiceDate >=" & Me.txtYear.Text
         FeatureClassToShapefile(pathName, m_transitLayer, iName, strTransitQuery)
