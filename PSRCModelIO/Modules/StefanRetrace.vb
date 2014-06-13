@@ -576,6 +576,7 @@ eh:
             '        End If
             pFt = pFCS.NextFeature
         Loop
+        System.Runtime.InteropServices.Marshal.FinalReleaseComObject(pFCS)
 
         getEdges = dct
 
@@ -1732,6 +1733,742 @@ eh:
         End Try
 
     End Sub
+    Public Sub create_TransitFile_NewSchema(ByVal pathnameN As String, ByVal filenameN As String)
+
+        '[080109] SEC: Created this to deal with Dwell Times. Older versions applied a dwell time from a TransitPoint to all
+        'subsequent nodes until the next TransitPoint. This resulted in way more stops than there should. Also, DWT's are listed for the
+        'Inode but the actual stop takes place at the Jnode portion of the link. Therefore, if you have a transit point with a positive dwell time
+        'followed by several non transit-point nodes the dwell time needs to be applied to the node before the next transit point. This is all taken
+        'care of in the code below.
+        'Example:
+        'TP
+        '1 dwt=.25
+        '5 dwt = .25
+        '8 dwt =.25
+        '10 lay = 0
+
+        'actual link to link read out with non tp nodes
+        '1 dwt=0
+        '2 dwt=0
+        '4 dwt=.25
+        '5 dwt=.25
+        '8 dwt=0
+        '9 dwt= .25
+        '10 lay = 0
+
+
+
+
+        'Now , DWT Is only
+        'taken and applied to nodes that are also transit points.
+
+        '[051106] hyu: this routine is to replace "create_TransitFile_0"
+        'The algorithm of traversing transit segments and writting nodes/weave nodes are different from the old one.
+        'It dramatically reduced the running time from hours to minutes.
+
+        'Dim pStatusBar As IStatusBar
+        'pStatusBar = m_App.StatusBar
+
+        'on error GoTo eh
+        WriteLogLine("")
+        WriteLogLine("========================================")
+        WriteLogLine("create_TransitFile started " & Now())
+        WriteLogLine("========================================")
+        WriteLogLine("")
+
+        'this must be called by createScenarioShapefile
+        Dim runtype(5) As String
+        runtype(0) = "AM"
+        runtype(1) = "MD"
+        runtype(2) = "PM"
+        runtype(3) = "EV"
+        runtype(4) = "NI"
+
+        Dim thepath As String
+        Dim tempfield As String
+        Dim tempString As String
+        Dim attrib(4) As String
+        Try
+
+            thepath = pathnameN + "\" + "am_" + filenameN
+            FileOpen(1, thepath, OpenMode.Output, OpenAccess.Default, OpenShare.Shared)
+            'Open thepath For Output As 1
+
+            thepath = pathnameN + "\" + "md_" + filenameN
+            FileOpen(2, thepath, OpenMode.Output, OpenAccess.Default, OpenShare.Shared)
+            'Open thepath For Output As 2
+            thepath = pathnameN + "\" + "pm_" + filenameN
+            FileOpen(3, thepath, OpenMode.Output, OpenAccess.Default, OpenShare.Shared)
+            'Open thepath For Output As 3
+            thepath = pathnameN + "\" + "ev_" + filenameN
+            FileOpen(4, thepath, OpenMode.Output, OpenAccess.Default, OpenShare.Shared)
+            'Open thepath For Output As 4
+            thepath = pathnameN + "\" + "ni_" + filenameN
+            FileOpen(5, thepath, OpenMode.Output, OpenAccess.Default, OpenShare.Shared)
+
+            'Open thepath For Output As 5
+
+            PrintLine(1, "c Exported Transit Routes from ArcMap /Emme/2 Interface for Am: ") '+ CStr(MyDate)
+            PrintLine(1, "c line   inode   jnode   dwfac   dwt   timtr   ttf    @ehdwy    result")
+            PrintLine(2, "c Exported Transit Routes from ArcMap /Emme/2 Interface for Midday: ") '+ CStr(MyDate)
+            PrintLine(2, "c line   inode   jnode   dwfac   dwt   timtr   ttf    @ehdwy    result")
+            PrintLine(3, "c Exported Transit Routes from ArcMap /Emme/2 Interface for PM: ") '+ CStr(MyDate)
+            PrintLine(3, "c line   inode   jnode   dwfac   dwt   timtr   ttf    @ehdwy    result")
+            PrintLine(4, "c Exported Transit Routes from ArcMap /Emme/2 Interface for Evening: ") '+ CStr(MyDate)
+            PrintLine(4, "c line   inode   jnode   dwfac   dwt   timtr   ttf    @ehdwy    result")
+            PrintLine(5, "c Exported Transit Routes from ArcMap /Emme/2 Interface for Night: ") '+ CStr(MyDate)
+            PrintLine(5, "c line   inode   jnode   dwfac   dwt   timtr   ttf    @ehdwy    result")
+            PrintLine(2, "t lines init")
+            PrintLine(1, "t lines init")
+            PrintLine(3, "t lines init")
+            PrintLine(4, "t lines init")
+            PrintLine(5, "t lines init")
+            Dim pFeatLayerE As IFeatureLayer, pTLineLayer As IFeatureLayer
+            Dim pWS As IWorkspace
+            Dim tblTSeg As ITable
+            'Dim Pfltransitpoints As IFeatureLayer
+            Dim pModeAtts As ITable
+            Dim dctMAtt As New Dictionary(Of Long, Row), dctEdges As New Dictionary(Of Long, Feature)
+            Dim dctAM_IJ_HOV As New Dictionary(Of Long, Long)
+            Dim dctAM_JI_HOV As New Dictionary(Of Long, Long)
+            Dim dctMD_IJ_HOV As New Dictionary(Of Long, Long)
+            Dim dctMD_JI_HOV As New Dictionary(Of Long, Long)
+            Dim dctPM_IJ_HOV As New Dictionary(Of Long, Long)
+            Dim dctPM_JI_HOV As New Dictionary(Of Long, Long)
+            Dim dctNodeString As New Dictionary(Of Long, String)
+            Dim pTblPrjEdge As ITable
+            Dim pTblMode As ITable
+            pTblPrjEdge = get_TableClass(m_layers(24)) 'use if future project
+            pTblMode = get_TableClass(m_layers(2))
+            'sec 072609
+            'Pfltransitpoints = get_FeatureLayer("sde.SDE.TransitPoints")
+
+            pWS = get_Workspace()
+            '    Set pTLineLayer = get_FeatureLayer(m_layers(13))  'transitlines
+            Dim pTLineFCls As IFeatureClass
+            pTLineFCls = getInterimTransitLines()
+            tblTSeg = get_TableClass(m_layers(14))  'tbltransitsegments
+            pModeAtts = get_TableClass(m_layers(2))
+            getEdgeAtts(m_edgeShp, pTblMode, pTblPrjEdge, g_PSRCEdgeID, dctMAtt)
+
+
+            LoadHOVDict(dctMAtt, dctAM_IJ_HOV, dctAM_JI_HOV, dctMD_IJ_HOV, dctMD_JI_HOV, dctPM_IJ_HOV, dctPM_JI_HOV)
+
+            Dim pMARow As IRow
+            Dim pEdgeID As Long
+            Dim pEdgeIDFilter As IQueryFilter
+            'Dim clsModeAtts As New clsModeAttributes(pMARow)
+            'Dim pMACursor As ICursor
+
+
+
+            Dim pQFtlines As IQueryFilter, pQF As IQueryFilter, pQF2 As IQueryFilter
+            Dim pFeature As IFeature, pFeatTRoute As IFeature, pFeatE As IFeature
+            Dim pFeatCursor As IFeatureCursor
+            Dim pFCtroute As IFeatureCursor
+            Dim pTC As ICursor
+            Dim pRow As IRow
+            Dim i As Long
+
+            pQFtlines = New QueryFilter
+            '    pQFtlines.WhereClause = "InServiceDate <= " + CStr(inserviceyear)
+            '    Set pFCtroute = pTLineLayer.Search(pQFtlines, False)
+            pFCtroute = pTLineFCls.Search(Nothing, False)
+            pFeatTRoute = pFCtroute.NextFeature
+
+            'Dim index As Long
+            Dim idIndex As Long, sIndex As Long
+            '    Dim iNode As Long, jNode As Long
+
+            'sort transit segment table by LineID and SegOrder, then loop through the sorted rows
+            Dim pSort As ITableSort
+            Dim dctTransitLine As New Dictionary(Of Long, Feature)
+
+            'dctTransitLine = New Dictionary
+            pSort = New TableSort
+            pQF = New QueryFilter
+
+            If strLayerPrefix = "SDE" Then
+                pQF.WhereClause = "SUBSTRING(CAST(LineID AS CHARACTER), 2, 2) = '" & Right(CStr(inserviceyear), 2) & "'" & "Or SUBSTRING(CAST(LineID AS CHARACTER), 2, 2) = '" & Right(CStr(inserviceyear + 1), 2) & "'"
+            Else
+                pQF.WhereClause = "Mid([LineID], 2, 2) = '" & Right(CStr(inserviceyear), 2) & "'"
+            End If
+
+            With pSort
+                .Fields = "LineID, SegOrder"
+                .Ascending("LineID") = True
+                .Ascending("SegOrder") = True
+                .QueryFilter = Nothing ' pQF
+                .Table = tblTSeg
+            End With
+            pSort.Sort(Nothing)
+            pTC = pSort.Rows
+
+            'start statusbar
+            Dim count As Long
+            Dim sLineID As String
+            '    count = pTLineLayer.FeatureClass.featurecount(pQFtlines)
+            count = pTLineFCls.FeatureCount(Nothing)
+            'pStatusBar.ShowProgressBar("Preparing for Transit...", 0, count, 1, True)
+            'jaf--let's keep the user updated
+            'frmNetLayer.lblStatus = "GlobalMod.create_Netfile: Starting Transit Build..."
+            'pan frmNetLayer.Refresh
+
+            'loop through searched transit Lines table, and get all transit info into a dictionary
+            '    idIndex = pTLineLayer.FeatureClass.FindField("LineID")
+            idIndex = pTLineFCls.FindField("LineID")
+            sIndex = tblTSeg.FindField("SegOrder")
+            Dim x As Long
+            Dim y As Long
+
+            Dim pTransitMode As String
+            Dim intOperator As Integer
+            Dim prevDwtStop As String = Nothing
+            'Dim intTPCounter As Integer
+            Do Until pFeatTRoute Is Nothing
+                'loop through each line and add the feature to a dictionar
+
+                sLineID = pFeatTRoute.Value(idIndex)
+                If Not dctTransitLine.ContainsKey(sLineID) Then dctTransitLine.Add(sLineID, pFeatTRoute)
+                pFeatTRoute = pFCtroute.NextFeature
+
+                'If Len(sLineID) > 4 Then
+                '    tempString = "c '" + Left(sLineID, 2) + "'" + vbNewLine
+                '    tempString = tempString + "a '" + Mid(sLineID, 3, Len(sLineID) - 2) + "'"
+                'Else
+                '    tempString = "a '" + sLineID + "'"
+                'End If
+                'tempString = "a '" + CStr(pFeatTRoute.value(idIndex)) + "'"
+
+                
+
+
+
+                'pStatusBar.StepProgressBar()
+            Loop
+
+            'now get starting segment
+            '    Dim skip As Integer, cindex As Integer
+            Dim preNode As Long, preLine As Long, curNode As Long, nextNode As Long, preWNode As Long, curWNode As Long, nextWNode As Long, preWNode2 As Long
+            Dim lSegOrder As Long, lLineID As Long, LineInfo As String, lUseGP As Long, lTOD As Long
+            Dim fldSegOrder As Long, fldLineId As Long, fldINode As Long, fldJNode As Long, fldUseGP As Long
+            Dim fldPath As Long, fldDwtStop As Long, fldtimeFuncID As Long, fldLayover As Long, fldUser1 As Long, fldUser2 As Long, fldUser3 As Long
+            Dim sPath As String, sDwtStop As String, stimeFuncID As String, sLayover As String, sUser1 As String, sUser2 As String, sUser3 As String
+            Dim PreWeaveString As String, lastNodeString As String
+            Dim bPreWeave As Boolean
+            Dim sDwtStopJ As String
+            Dim tempLastLineString As String
+            With pTC
+                fldINode = .FindField(g_INode)
+                fldJNode = .FindField(g_JNode)
+                fldSegOrder = .FindField("SegOrder")
+                fldLineId = .FindField("LineID")
+                fldPath = .FindField("Path")
+                fldDwtStop = .FindField("DwtStop")
+                fldtimeFuncID = .FindField("timeFuncID")
+                fldLayover = .FindField("LayOver")
+                fldUser1 = .FindField("User1")
+                fldUser2 = .FindField("User2")
+                fldUser3 = .FindField("User3")
+                fldUseGP = .FindField("UseGPOnly")
+            End With
+
+
+
+            pRow = pTC.NextRow
+
+
+            If pRow Is Nothing Then
+                WriteLogLine("No Transit Line selected. End Creating Transit buildfiles")
+                'pStatusBar.HideProgressBar()
+                Exit Sub
+            End If
+            'preLine = pRow.value(pRow.Fields.FindField("LineID"))
+            preLine = 0
+
+
+
+
+
+
+            'get all nodes in the intermediate layer
+            Dim dctNodes As New Dictionary(Of String, String)
+
+            'dctNodes = New Dictionary
+            getAllNodes2(dctNodes)
+            ' pStatusBar.ShowProgressBar("Creating Transit...", 0, tblTSeg.rowcount(pQF), 1, True)
+            Dim intTPCounter As Long
+            Dim dctTransitPoints As Dictionary(Of Long, Long)
+            Dim dctDwellTimes As Dictionary(Of Long, String)
+            Dim dctStopDistance As Dictionary(Of Long, Long)
+            Dim curTransitLine As clsTransitLineAtts
+
+
+            'Dim x As Long
+            x = 0
+            Dim intNodeCounter As Long = 1
+            Do Until pRow Is Nothing
+                'check to see if this is a new line, if so get it's mode
+                lLineID = pRow.Value(fldLineId)
+                If preLine = 0 Or preLine <> lLineID Then
+                    Dim pFilt As IQueryFilter
+                    Dim pFeat As IFeature
+                    Dim pFCur As IFeatureCursor
+                    pFilt = New QueryFilter
+                    pFilt.WhereClause = "LineID = " & CStr(lLineID)
+                    pFCur = pTLineFCls.Search(pFilt, True)
+                    pFeat = pFCur.NextFeature
+                    curTransitLine = New clsTransitLineAtts(pFeat)
+                    preLine = lLineID
+                    pTransitMode = pFeat.Value(pFeat.Fields.FindField("Mode"))
+
+                End If
+
+
+                'pStatusBar.StepProgressBar()
+
+
+                If x = 0 Then
+                    pQFtlines = New QueryFilter
+                    pQFtlines.WhereClause = "LineID = " + CStr(lLineID)
+                    'Set pFCtroute = pTLineLayer.Search(pQFtlines, False)
+                    pFCtroute = pTLineFCls.Search(pQFtlines, False)
+                    pFeatTRoute = pFCtroute.NextFeature
+                    pTransitMode = pFeatTRoute.Value(pFeatTRoute.Fields.FindField("Mode"))
+                    intOperator = pFeatTRoute.Value(pFeatTRoute.Fields.FindField("Operator"))
+                End If
+
+
+                'sec 073009
+                'get all the TransitPoints that belong to the route, store them in a dictionary
+                'store their DWTs in another dictionary
+                If x <> pRow.Value(fldLineId) Then
+                    dctTransitPoints = New Dictionary(Of Long, Long)
+                    dctDwellTimes = New Dictionary(Of Long, String)
+                    dctStopDistance = New Dictionary(Of Long, Long)
+                    GetTransitPointsByLineID2(dctTransitPoints, dctDwellTimes, Pfltransitpoints.FeatureClass, lLineID)
+                    intTPCounter = 1
+                    x = pRow.Value(fldLineId)
+                    GetStopDistances2(lLineID, dctStopDistance, tblTSeg, dctTransitPoints)
+                End If
+
+                'Do Until dctTransitLine.ContainsKey(CStr(lLineID))
+                '    'if transit info doesn't exist, then skip all the records of this line.
+                '    pRow = pTC.NextRow
+                '    'pStatusBar.StepProgressBar()
+
+                '    If pRow Is Nothing Then
+                '        'Close()
+
+                '        Exit Sub
+                '    End If
+                '    lLineID = pRow.Value(fldLineId)
+                'Loop
+
+                lSegOrder = pRow.Value(fldSegOrder)
+
+                '[040207]hyu: per Jeff's email on [05/16/06]: path=no or path=yes where TransitLines.Path=0 signifies no and TransitLines.Path=1 signifies yes.
+                sPath = IIf(pRow.Value(fldPath) = 1, " path=yes", IIf(pRow.Value(fldPath) = 0, " path=no", ""))
+
+                'sDwtStop = " dwt=" + CStr(pRow.value(fldDwtStop))
+                'check to see if the Inode of the segment is a transit point for the transit route:
+
+
+                Dim strDwell As String
+                Dim intPrevTN As Integer
+                Dim lngStopDistance As Long
+
+                Dim prevNodeString As String
+
+
+
+                'see if the current node is a transit point
+                Try
+
+
+                    If dctTransitPoints.Item(intTPCounter) = pRow.Value(fldINode) Then
+                        If dctStopDistance.ContainsKey(intTPCounter + 1) Then
+
+
+                            lngStopDistance = dctStopDistance.Item(intTPCounter) - dctStopDistance.Item(intTPCounter + 1)
+                            strDwell = dctDwellTimes.Item(intTPCounter)
+                            intPrevTN = intTPCounter
+                            intTPCounter = intTPCounter + 1
+                        Else
+                            WriteLogLine("Line Failure at: " & lLineID & " " & intTPCounter + 1)
+                            intTPCounter = intTPCounter + 1
+                        End If
+                    End If
+
+                    If dctTransitPoints.ContainsKey(intPrevTN + 1) Then
+                        If dctTransitPoints.Item(intPrevTN + 1) = pRow.Value(fldJNode) Then
+                            sDwtStop = " " & strDwell
+                        Else
+                            sDwtStop = " dwt=#.00"
+                        End If
+                    Else
+                        WriteLogLine("Line Failure at: " & lLineID & " " & intTPCounter + 1)
+                    End If
+
+                    'sDwtStop = " " & GetDwellTime2(lLineID, intTPCounter)
+                    'if so, grab the DWT from the DWT dictionary
+                Catch ex As Exception
+                    MessageBox.Show(ex.ToString)
+
+                End Try
+
+
+
+                'deal with the last node
+                If dctTransitPoints.Item(dctTransitPoints.Count) = pRow.Value(fldJNode) Then
+                    'sDwtStopJ = " " & CStr(GetDwellTime2(lLineID, dctTransitPoints.count))
+                    sDwtStopJ = " " & dctDwellTimes.Item(dctDwellTimes.Count)
+                End If
+
+                'sDwtStopJ = " " & CStr(GetDwellTime(Pfltransitpoints.FeatureClass, lLineID, pRow.value(fldJNode)))
+                stimeFuncID = " ttf=" + CStr(pRow.Value(fldtimeFuncID))
+                sLayover = IIf(pRow.Value(fldLayover) > 0, " lay=" + CStr(pRow.Value(fldLayover)), "")
+                sUser1 = " us1=" + CStr(IIf(IsDBNull(pRow.Value(fldUser1)), 0, "0"))
+                sUser2 = " us2=" + CStr(IIf(IsDBNull(pRow.Value(fldUser2)), 0, pRow.Value(fldUser2)))
+                sUser3 = " us3=" + CStr(IIf(IsDBNull(pRow.Value(fldUser3)), 0, pRow.Value(fldUser3)))
+                tempString = sDwtStop + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+                tempLastLineString = sDwtStopJ + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+
+
+                If lSegOrder = 1 Then
+
+                    'start a new line, then get the transit line info
+
+                    'LineInfo = dctTransitLine.Item(CStr(lLineID))
+                    'lTOD = Left(LineInfo, 1)
+                    'LineInfo = Right(LineInfo, Len(LineInfo) - 1)
+
+
+                    i = 0
+
+                    'get the first node
+                    curNode = pRow.Value(fldINode)
+                    nextNode = pRow.Value(fldJNode)
+                    preNode = 0 'curNode
+                    preWNode = 0
+                    curWNode = 0
+                    PreWeaveString = ""
+                    lastNodeString = ""
+                    bPreWeave = False
+
+                    'new transit line, write out line info
+                    writeTransitLineInfo(lTOD, curTransitLine)
+
+                    If sPath <> "" Then writeTransitNode2(lTOD, sPath, curTransitLine)
+                End If
+
+                curNode = pRow.Value(fldINode)
+                nextNode = pRow.Value(fldJNode)
+
+                If curNode <> preNode Then
+                    If Not dctNodes.ContainsKey(CStr(curNode)) Then
+                        If fVerboseLog Then WriteLogLine("Line " & lLineID & " Node " & curNode & " SegOrder=" & lSegOrder & " dissolved")
+
+                    Else    'dctNodes.Exists(CStr(curNode))
+                        'form an edge of preNode-curNode
+                        'check whether it should use the GP/TR/HOV lane
+                        'if the nodes dosn't exist, skip it.
+                        lUseGP = pRow.Value(fldUseGP)
+
+                        If lUseGP = 0 Then
+                            If fVerboseLog Then WriteLogLine("Line " & lLineID & " Node " & curNode & " SegOrder=" & lSegOrder & " UseGPOnly=0")
+
+                            pQF2 = New QueryFilter
+                            pQF2.WhereClause = "(" + g_INode + "=" + CStr(curNode) + " AND " + g_JNode + "=" + CStr(nextNode) + ") OR (" _
+                                + g_JNode + "=" + CStr(curNode) + " AND " + g_INode + "=" + CStr(nextNode) + ")"
+                            pFeatCursor = m_edgeShp.Search(pQF2, False)
+                            pFeature = pFeatCursor.NextFeature
+                            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(pFeatCursor)
+
+                            If Not pFeature Is Nothing Then
+                                'Do TTF stuff here
+                                If intOperator = 4 Then
+                                    'do nothing
+                                Else
+                                    'pTransitMode = pFeature.Fields.FindField("NewFacilityType")
+                                    lngStopDistance = Math.Abs(lngStopDistance)
+                                    Dim strSegmentMode As String
+                                    strSegmentMode = pFeature.Value(pFeature.Fields.FindField("Modes"))
+                                    If pTransitMode = "r" Then
+                                        stimeFuncID = 5
+                                    ElseIf pTransitMode = "f" Then
+                                        stimeFuncID = 5
+                                    ElseIf strSegmentMode = "br" Or strSegmentMode = "bwk" Or strSegmentMode = "b" Or strSegmentMode = "wkb" Then
+                                        stimeFuncID = 4
+                                    ElseIf lngStopDistance > 7920 Then
+                                        stimeFuncID = 14
+                                    ElseIf (pFeature.Value(pFeature.Fields.FindField("NewFacilityType")) = 1 Or pFeature.Value(pFeature.Fields.FindField("NewFacilityType")) = 2) And lngStopDistance > 2640 Then
+                                        stimeFuncID = 13
+                                    ElseIf lngStopDistance > 2640 Then
+                                        stimeFuncID = 12
+                                    Else : stimeFuncID = 11
+
+                                    End If
+                                    stimeFuncID = " ttf=" + stimeFuncID
+                                End If
+
+
+                                tempString = sDwtStop + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+                                tempLastLineString = sDwtStopJ + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+
+
+                                'Does the Transit Segment goe in the IJ or JI direciton
+                                'Does the Transit Segment goe in the IJ or JI direciton
+                                If pFeature.Value(m_edgeShp.FindField("INode")) = curNode Then 'JI
+                                    If Not IsDBNull(pFeature.Value(m_edgeShp.FindField("TR_I"))) Then
+
+                                        'If pFeature.Value(m_edgeShp.FindField("TR_I")) > 0 Then
+                                        'weave nodes from "TR_I" and "TR_J"
+                                        curWNode = pFeature.Value(m_edgeShp.FindField("TR_I")) + m_Offset
+                                        nextWNode = pFeature.Value(m_edgeShp.FindField("TR_J")) + m_Offset
+
+                                        If fVerboseLog Then WriteLogLine("potential weave nodes (TR_J/I) " & preWNode & ", " & curWNode)
+                                        'End If
+                                    Else
+                                        'weave nodes may from "HOV_I/J"
+                                        Select Case pFeature.Value(m_edgeShp.FindField("FacilityType"))
+                                            Case 11, 12, 3, 13, 9
+                                                curWNode = 0
+                                                nextWNode = 0
+                                            Case Else
+                                                pEdgeID = pFeature.Value(m_edgeShp.FindField("PSRCEdgeID"))
+
+                                                If curTransitLine.Headway_AM > 0 And dctAM_IJ_HOV.ContainsKey(pEdgeID) Then
+                                                    ' clsModeAtts.modeAttributeRow = pMARow
+                                                    'MsgBox (clsModeAtts.IJLANESHOVAM)
+                                                    curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                                    nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                                ElseIf curTransitLine.Headway_MD > 0 And dctMD_IJ_HOV.ContainsKey(pEdgeID) Then
+                                                    curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                                    nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                                ElseIf curTransitLine.Headway_PM > 0 And dctPM_IJ_HOV.ContainsKey(pEdgeID) Then
+                                                    curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                                    nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                                End If
+                                        End Select
+
+                                        If fVerboseLog Then WriteLogLine("potential weave nodes (HOV_J/I) " & curWNode & ", " & nextWNode)
+                                    End If
+
+                                Else 'Transit segment goes in the JI direction
+                                    If Not IsDBNull(pFeature.Value(m_edgeShp.FindField("TR_J"))) Then
+                                        'If pFeature.Value(m_edgeShp.FindField("TR_J")) > 0 Then
+                                        'weave nodes from "TR_I" and "TR_J"
+                                        curWNode = pFeature.Value(m_edgeShp.FindField("TR_J")) + m_Offset
+                                        nextWNode = pFeature.Value(m_edgeShp.FindField("TR_I")) + m_Offset
+
+                                        'End If
+                                        'End If
+                                        If fVerboseLog Then WriteLogLine("potential weave nodes (TR_I/J) " & curWNode & ", " & nextWNode)
+
+                                    Else
+                                        'weave nodes may from "HOV_I/J"
+                                        Select Case pFeature.Value(m_edgeShp.FindField("FacilityType"))
+                                            Case 11, 12, 3, 13, 9
+                                                curWNode = 0
+                                                nextWNode = 0
+                                            Case Else
+                                                pEdgeID = pFeature.Value(m_edgeShp.FindField("PSRCEdgeID"))
+                                                'pEdgeIDFilter = New QueryFilter
+                                                'pEdgeIDFilter.WhereClause = "PSRCEdgeID = " & pEdgeID
+                                                'pMACursor = pModeAtts.Search(pEdgeIDFilter, False)
+                                                'pMARow = pMACursor.NextRow
+                                                ' System.Runtime.InteropServices.Marshal.FinalReleaseComObject(pMACursor)
+                                                ' pMACursor = Nothing
+                                                'If IsHOV(pMARow, Left(CStr(lLineID), 1), 2) Then
+                                                'curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                                'nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                                'End If
+                                                If curTransitLine.Headway_AM > 0 And dctAM_JI_HOV.ContainsKey(pEdgeID) Then
+                                                    ' clsModeAtts.modeAttributeRow = pMARow
+                                                    'MsgBox (clsModeAtts.IJLANESHOVAM)
+                                                    curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                                    nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                                ElseIf curTransitLine.Headway_MD > 0 And dctMD_JI_HOV.ContainsKey(pEdgeID) Then
+                                                    curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                                    nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                                ElseIf curTransitLine.Headway_PM > 0 And dctPM_JI_HOV.ContainsKey(pEdgeID) Then
+                                                    curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                                    nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                                End If
+
+                                        End Select
+
+                                        If fVerboseLog Then WriteLogLine("potential weave nodes (HOV_I/J) " & preWNode & ", " & curWNode)
+                                    End If
+                                End If 'pfeature.value(m_edgeShp.FindField("INode")) = curNode
+
+
+
+                                If bPreWeave And preWNode = curWNode And curWNode <> 0 Then
+                                    'we are on hov system, write out the next node because current one has alreayd been written. We
+                                    'are one step ahead here. 
+                                    'Use next weave node, but have to make sure dwell time is right!
+                                    'if next node is a stop we need to assign it to the previous node since we are one node ahead here!
+
+                                    'writeTransitNode(lTOD, " " + CStr(nextWNode) + tempString)
+                                    If dctTransitPoints.Item(intPrevTN + 1) = pRow.Value(fldJNode) Then
+                                        'sDwtStop = " " & strDwell
+                                        'sDwtStop is set from above and should indicate a stop. We need to apply this to the previous node. 
+
+
+                                        prevNodeString = dctNodeString.Item(intNodeCounter - 1)
+                                        prevNodeString = prevNodeString.Replace(LTrim(prevDwtStop), LTrim(sDwtStop))
+                                        dctNodeString.Item(intNodeCounter - 1) = prevNodeString
+
+
+                                        'Stop should not take place here. The dictionary will be updated next iteration if it is indeed a stop. 
+                                        tempString = " dwt=#.00" + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+
+                                    End If
+                                    dctNodeString.Add(intNodeCounter, " " + CStr(nextWNode) + tempString)
+                                    intNodeCounter = intNodeCounter + 1
+                                    bPreWeave = True
+                                Else
+                                    'On GP lanes, did we just get off HOV?
+                                    'If bPreWeave And pRow.Value(fldINode) = dctTransitPoints(intPrevTN) Then
+                                    'if yes, have to update last node with proper stop info:
+                                    'NodeString = dctNodeString.Item(intNodeCounter - 1)
+                                    'prevNodeString = System.Text.RegularExpressions.Regex.Replace(prevNodeString, "dwt=*....", LTrim(dctDwellTimes.Item(intTPCounter - 1)))
+
+
+                                    'prevNodeString = prevNodeString.Replace(LTrim(prevDwtStop), LTrim(dctDwellTimes.Item(intTPCounter - 1)))
+                                    'dctNodeString.Item(intNodeCounter - 1) = prevNodeString
+                                    'End If
+
+                                    'see if transit line is entering HOV/Managed lanes, if so, write out I & J Nodes of HOV:
+                                    If curWNode > 0 And nextWNode > 0 Then
+                                        'this is the gp node. If the next node is a stop, need to put the dwll time on the INode of the HOV, not here. 
+                                        tempString = " dwt=#.00" + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+                                        'writeTransitNode(lTOD, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                                        dctNodeString.Add(intNodeCounter, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                                        intNodeCounter = intNodeCounter + 1
+
+                                        'HOV INode of the first HOV link. Put dwell time here if the next node is a stop. 
+                                        tempString = sDwtStop + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+                                        'writeTransitNode(lTOD, " " + CStr(curWNode) + tempString)
+                                        dctNodeString.Add(intNodeCounter, " " + CStr(curWNode) + tempString)
+                                        intNodeCounter = intNodeCounter + 1
+
+                                        'HOV JNode of the first HOV link
+                                        'if next node on the next link is indeed a stop, this dictionary will get updated. 
+                                        tempString = " dwt=#.00" + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+                                        'writeTransitNode(lTOD, " " + CStr(nextWNode) + tempString)
+                                        dctNodeString.Add(intNodeCounter, " " + CStr(nextWNode) + tempString)
+                                        intNodeCounter = intNodeCounter + 1
+                                        bPreWeave = True
+                                    Else
+                                        bPreWeave = False
+                                        'was on a GP and still is 
+                                        'writeTransitNode(lTOD, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                                        dctNodeString.Add(intNodeCounter, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                                        intNodeCounter = intNodeCounter + 1
+                                    End If
+                                End If
+                                'sec 072909- fixing DWTs
+                                'lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempString
+                                lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempLastLineString
+
+                                preNode = curNode
+                                preWNode = nextWNode
+                                curWNode = 0
+                                nextWNode = 0
+
+                            Else 'pfeature Is Nothing
+                                If i = 0 Then
+                                    WriteLogLine("Data Error: Segment " + CStr(lSegOrder) + " on transit line " + CStr(lLineID) + " underlying TransRefEdge not in service")
+                                    WriteLogLine("Skip the rest of line " & lLineID)
+                                    i = 1
+                                End If
+                            End If  'Not pfeature Is Nothing
+                        Else    'lUseGP <> 0
+                            'GP only
+
+                            'SEC 072909- fixing DWTs
+                            'lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempString
+                            lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempLastLineString
+                            'writeTransitNode(lTOD, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                            dctNodeString.Add(intNodeCounter, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                            intNodeCounter = intNodeCounter + 1
+                            bPreWeave = False
+                            'in case we need to update the previous string
+
+                            preNode = curNode
+                            curNode = nextNode
+                            nextNode = 0
+                            curWNode = 0
+                            preWNode = 0
+                            nextWNode = 0
+                        End If  'lUseGP = 0
+                    End If  'Not dctNodes.Exists(CStr(curNode))
+                End If  'curNode <> preNode
+                pRow = pTC.NextRow
+
+                If pRow Is Nothing Then
+
+
+                    'now is at the end, write the last node
+                    'writeTransitNode(lTOD, lastNodeString)
+                    dctNodeString.Add(intNodeCounter, lastNodeString)
+
+                    For y = 1 To dctNodeString.Count
+                        writeTransitNode2(lTOD, dctNodeString.Item(y), curTransitLine)
+                    Next y
+                    dctNodeString.Clear()
+                    intNodeCounter = 1
+                Else
+                    If pRow.Value(fldLineId) <> lLineID Then
+                        'a new transit line starts. so the unwritten last node of the previous line should be written now
+                        'writeTransitNode(lTOD, lastNodeString)
+                        dctNodeString.Add(intNodeCounter, lastNodeString)
+                        For y = 1 To dctNodeString.Count
+                            writeTransitNode2(lTOD, dctNodeString.Item(y), curTransitLine)
+                        Next y
+                        dctNodeString.Clear()
+
+                        intNodeCounter = 1
+                    End If
+                End If
+                prevDwtStop = sDwtStop
+            Loop
+
+            'pStatusBar.HideProgressBar()
+            FileClose(1, 2, 3, 4, 5)
+            pFeatLayerE = Nothing
+            '   pTLineLayer = Nothing
+            pTLineFCls = Nothing
+            pFeature = Nothing
+            WriteLogLine("FINISHED create_TransitFile at " & Now())
+            dctTransitLine.Clear()
+            dctNodes.Clear()
+            dctTransitLine = Nothing
+            dctNodes = Nothing
+
+
+
+
+            'Exit Sub
+            'eh:
+
+
+
+        Catch ex As Exception
+            MessageBox.Show(ex.ToString)
+
+            CloseLogFile("PROGRAM ERROR: " & Err.Number & ", " & Err.Description & "--GlobalMod.create_TransitFile")
+            MsgBox("PROGRAM ERROR: " & Err.Number & ", " & Err.Description, , "GlobalMod.create_TransitFile")
+            'Print #9, Err.Description, vbExclamation, "TransitFile"
+            FileClose(1, 2, 3, 4, 5)
+            'Close 9
+
+        End Try
+
+    End Sub
     Public Function GetTransitPointsByLineID2(ByVal dct As Dictionary(Of Long, Long), ByVal dct2 As Dictionary(Of Long, String), ByVal TransitPointFC As IFeatureClass, ByVal LineID As Long)
         '[080309] SEC: stores all the transit points in a dictionary with a counter as the key. Could not use pointorder as
         'key because there are sequential transit nodes that are on the same node/junction. This was causing a problem and
@@ -1916,7 +2653,7 @@ eh:
 
             Try
 
-            
+
 
                 If intTPCounter = 1 Then
                     dct.Add(CType(intTPCounter, Long), 0)
@@ -1967,7 +2704,7 @@ eh:
 
 
     End Function
-    Public Function LoadHOVDict(ByVal modeAtts_dct As Dictionary(Of Long, Row), ByVal dctAM_IJHOV As Dictionary(Of Long, Long), ByVal dctAM_JIHOV As Dictionary(Of Long, Long), ByVal dctMD_IJHOV As Dictionary(Of Long, Long), ByVal dctMD_JIHOV As Dictionary(Of Long, Long))
+    Public Function LoadHOVDict(ByVal modeAtts_dct As Dictionary(Of Long, Row), ByVal dctAM_IJHOV As Dictionary(Of Long, Long), ByVal dctAM_JIHOV As Dictionary(Of Long, Long), ByVal dctMD_IJHOV As Dictionary(Of Long, Long), ByVal dctMD_JIHOV As Dictionary(Of Long, Long), Optional ByVal dctPM_IJHOV As Dictionary(Of Long, Long) = Nothing, Optional ByVal dctPM_JIHOV As Dictionary(Of Long, Long) = Nothing)
         For Each kvp As KeyValuePair(Of Long, Row) In modeAtts_dct
             Dim rowModeAtt As New clsModeAttributes(kvp.Value)
             If rowModeAtt.IJLANESHOVAM > 0 Then
@@ -1982,6 +2719,16 @@ eh:
             If rowModeAtt.JILANESHOVMD > 0 Then
                 dctMD_JIHOV.Add(rowModeAtt.PSRCEDGEID, rowModeAtt.PSRCEDGEID)
             End If
+            If Not dctPM_IJHOV Is Nothing Then
+                If rowModeAtt.IJLANESHOVPM > 0 Then
+                    dctPM_IJHOV.Add(rowModeAtt.PSRCEDGEID, rowModeAtt.PSRCEDGEID)
+                End If
+            End If
+            If Not dctPM_IJHOV Is Nothing Then
+                If rowModeAtt.JILANESHOVPM > 0 Then
+                    dctPM_JIHOV.Add(rowModeAtt.PSRCEDGEID, rowModeAtt.PSRCEDGEID)
+                End If
+            End If
 
         Next
 
@@ -1989,6 +2736,94 @@ eh:
 
     End Function
 
+    Public Function GetTransitLineInfo(ByVal _clsTransitLineAtts As clsTransitLineAtts, ByVal headway_value As Double)
+        Dim tempString As String
+        Dim sLineID As String
+        sLineID = CType(_clsTransitLineAtts.LineID, String)
+
+
+
+        If Len(sLineID) > 4 Then
+            tempString = "c '" + Left(_clsTransitLineAtts.LineID, 2) + "'" + vbNewLine
+            tempString = tempString + "a '" + Mid(sLineID, 3, Len(sLineID) - 2) + "'"
+        Else
+            tempString = "a '" + sLineID + "'"
+        End If
+        'tempString = "a '" + CStr(pFeatTRoute.value(idIndex)) + "'"
+        tempString = tempString + " " + _clsTransitLineAtts.Mode
+        'index = pFeatTRoute.Fields.FindField("VehicleType")
+        'Index = pFeatTRoute.Fields.FindField(Left("VehicleType", 10))
+
+        tempString = tempString + " " + CStr(_clsTransitLineAtts.VehicleType)
+
+        tempString = tempString + " " + CStr(headway_value)
+
+        tempString = tempString + " " + CStr(_clsTransitLineAtts.Speed)
+
+        tempString = tempString + " '" + CStr(_clsTransitLineAtts.Description) + "'"
+
+        tempString = tempString + " 0" + " " + CStr(_clsTransitLineAtts.UL2)
+
+        tempString = tempString + " " + CStr(_clsTransitLineAtts.Company)
+
+        'tempString = CStr(_clsTransitLineAtts.TimePeriod) + tempString
+
+        'index = pFeatTRoute.Fields.FindField("Geography")
+        'If Not IsNull(pFeatTRoute.value(index)) Then
+        'tempString = tempString + " " + CStr(pFeatTRoute.value(index))
+        'Else
+        'tempString = tempString + " 1"
+        'End If
+        'index = pFeatTRoute.Fields.FindField("Oneway")
+        'If Not IsNull(pFeatTRoute.value(index)) Then
+        'tempString = tempString + " " + CStr(pFeatTRoute.value(index))
+        'Else
+        'tempString = tempString + " 1"
+        'End If
+        Return tempString
+
+    End Function
+    Public Sub writeTransitLineInfo(ByVal lTOD As Long, ByVal _clsTransitLineAtts As clsTransitLineAtts)
+
+        Dim sLine As String
+
+
+        If lTOD = 0 Then
+
+            If _clsTransitLineAtts.Headway_AM > 0 Then
+                sLine = GetTransitLineInfo(_clsTransitLineAtts, _clsTransitLineAtts.Headway_AM)
+                PrintLine(1, sLine)
+            End If
+
+            If _clsTransitLineAtts.Headway_MD > 0 Then
+                sLine = GetTransitLineInfo(_clsTransitLineAtts, _clsTransitLineAtts.Headway_MD)
+                PrintLine(2, sLine)
+            End If
+            If _clsTransitLineAtts.Headway_PM > 0 Then
+                sLine = GetTransitLineInfo(_clsTransitLineAtts, _clsTransitLineAtts.Headway_PM)
+                PrintLine(3, sLine)
+            End If
+
+
+        End If
+
+    End Sub
+    Public Function writeTransitNode2(ByVal lTOD As Long, ByVal sLine As String, ByVal _clsTransitLineAtts As clsTransitLineAtts)
+        Dim t As Integer
+        If lTOD = 0 Then
+            If _clsTransitLineAtts.Headway_AM > 0 Then
+                PrintLine(1, sLine)
+            End If
+            If _clsTransitLineAtts.Headway_MD > 0 Then
+                PrintLine(2, sLine)
+            End If
+            If _clsTransitLineAtts.Headway_PM > 0 Then
+                PrintLine(3, sLine)
+            End If
+        Else
+            PrintLine(lTOD, sLine)
+        End If
+    End Function
 
 End Module
 

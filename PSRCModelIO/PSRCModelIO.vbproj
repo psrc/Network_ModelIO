@@ -201,6 +201,7 @@
     <Compile Include="Classes\clsProjectAttributes.vb" />
     <Compile Include="Classes\clsScenarioEdgeAtts.vb" />
     <Compile Include="Classes\clsTblLineProjects.vb" />
+    <Compile Include="Classes\clsTransitLineAtts.vb" />
     <Compile Include="Classes\clsTransRefEdgeAtts.vb" />
     <Compile Include="Classes\jctAtt.vb" />
     <Compile Include="cmdBuildFiles.vb" />

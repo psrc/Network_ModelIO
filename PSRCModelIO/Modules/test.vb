@@ -1026,14 +1026,12 @@ eh:
         If (IsDBNull(pRow.Value(Tindex)) = False And pRow.Value(Tindex) > 0) Then
             dLanes = pRow.Value(Tindex)
 
-
-
-
         Else
             Tindex = pMRow.Fields.FindField(laneFld)
             If (IsDBNull(pMRow.Value(Tindex)) = False And pMRow.Value(Tindex) > 0) Then
                 dLanes = pMRow.Value(Tindex)
 
+               
             Else
                 If sType = "GP" Then
                     dLanes = 1
