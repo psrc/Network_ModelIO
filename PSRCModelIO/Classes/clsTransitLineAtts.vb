@@ -222,5 +222,17 @@ Public Class clsTransitLineAtts
             _transitLine.Store()
         End Set
     End Property
-
+    Public Property Headway_NI() As Double
+        Get
+            Dim intPos As Integer
+            intPos = _transitLine.Fields.FindField("Headway_NI")
+            Headway_NI = _transitLine.Value(intPos)
+        End Get
+        Set(ByVal value As Double)
+            Dim intPos As Integer
+            intPos = _transitLine.Fields.FindField("Headway_NI")
+            _transitLine.Value(intPos) = value
+            _transitLine.Store()
+        End Set
+    End Property
 End Class

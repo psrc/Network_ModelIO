@@ -206,7 +206,7 @@ eh:
             '        tempname = Left(iName, (leng - 4))
             tempname = Replace(iName, ".shp", "", , , vbTextCompare)
             'StefanRetrace.create_TransitFile5(pathName, transitName)
-            StefanRetrace.create_TransitFile_NewSchema(pathName, transitName)
+            StefanRetrace.create_TransitFile_NewSchema2(pathName, transitName)
         End If
 
         'Me.lblStatus.Text = "BUILDFILE WRITE COMPLETED " & Now()
