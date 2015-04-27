@@ -2140,7 +2140,7 @@ eh:
         pFeatLayer = Nothing
     End Sub
 
-    Public Sub SplitFeatureByM0(ByVal pFeature As IFeature, ByVal pSplitM As Double, ByVal onode As Long, ByVal NewPoint As IPoint, ByVal lType As String, ByVal dctEdges As Dictionary, ByVal dctJct As Dictionary)
+    Public Sub SplitFeatureByM0(ByVal pFeature As IFeature, ByVal pSplitM As Double, ByVal onode As Long, ByVal NewPoint As IPoint, ByVal lType As String, ByVal dctEdges As Dictionary(Of Object, Object), ByVal dctJct As Dictionary(Of Object, Object))
         'pSplit needs to be shadow length from FromPoint
         'on error GoTo ErrChk
         If fVerboseLog Then WriteLogLine("called SplitFeatureByM")
@@ -2348,7 +2348,7 @@ eh:
                 index = pNewFeature.Fields.FindField(pNewFeature.Class.OIDFieldName)
                 spID = pNewFeature.Value(index)
 
-                If dctEdges.Exists(CStr(spID)) Then
+                If dctEdges.ContainsKey(CStr(spID)) Then
                     dctEdges.Item(CStr(spID)) = pNewFeature
                 Else
                     dctEdges.Add(CStr(spID), pNewFeature)
@@ -3614,8 +3614,8 @@ End Function
 
     Public Sub createWeaveLink0(ByVal lType As String, ByVal pFeat As IFeature, ByVal pRow1 As IRow, ByVal ptstring As String, _
     ByVal wString As String, ByVal wNodes As String, ByVal astring As String, ByVal tpd As String, ByVal lanes As Long, ByVal dir As String, _
-    ByVal dctEmme2Nodes As Dictionary, ByVal dctWeaveNodes As Dictionary, ByVal dctWeaveNodes2 As Dictionary, _
-    ByVal dctJcts As Dictionary, ByVal dctEdges As Dictionary)
+    ByVal dctEmme2Nodes As Dictionary(Of Object, Object), ByVal dctWeaveNodes As Dictionary(Of Long, Long), ByVal dctWeaveNodes2 As Dictionary(Of Object, Object), _
+    ByVal dctJcts As Dictionary(Of Long, Feature), ByVal dctEdges As Dictionary(Of Long, Feature))
         'dctWeaveNodes is a dictionary of weave node IDs. key=cstr(weavenode id), item=weavenode id
         'dctWeaveNodes2 is a dictionary of Scen_Node and the corresponding weave node. key=Scen_Node, item=weave node
 
@@ -3630,8 +3630,8 @@ End Function
         If fVerboseLog Then WriteLogLine("-------------------------------------------------")
 
         Dim pQF As IQueryFilter, pQFt As IQueryFilter
-        Dim dctWNs As Dictionary = dctWeaveNodes
-        Dim dctWNs2 As Dictionary = dctWeaveNodes2
+        Dim dctWNs As Dictionary(Of Long, Long) = dctWeaveNodes
+        Dim dctWNs2 As Dictionary(Of Object, Object) = dctWeaveNodes2
 
         Dim pFC As IFeatureCursor, pFCj As IFeatureCursor
         Dim pNewFeat As IFeature
@@ -3742,7 +3742,7 @@ End Function
                 wNodes = CStr(jwNode) + " " + CStr(iwNode)
             End If
 
-            If Not dctWeaveNodes.Exists(CStr(iwNode)) Then
+            If Not dctWeaveNodes.ContainsKey(CStr(iwNode)) Then
                 '[050407] hyu:
                 '             pQF = New QueryFilter
                 '            pQF.WhereClause = "Scen_Node = " + CStr(iNode)
@@ -3750,7 +3750,7 @@ End Function
                 '             pJFeat = pFCj.NextFeature
 
                 '[051507]hyu: if the weavenode is a junction, it's the split point for case 2 during weave link creation
-                If dctJcts.Exists(CStr(iwNode)) Then
+                If dctJcts.ContainsKey(CStr(iwNode)) Then
                     pJFeat = dctJcts.Item(iwNode)
                     pPoint = pJFeat.ShapeCopy
                 Else
@@ -3767,10 +3767,10 @@ End Function
                 astring = astring + vbCrLf + CStr(iNode) + " " + CStr(iwNode) + wID_Type
 
                 dctWeaveNodes.Add(CStr(iwNode), iwNode)
-                If Not dctWeaveNodes2.Exists(iNode) Then dctWeaveNodes2.Add(iNode, iwNode)
+                If Not dctWeaveNodes2.ContainsKey(iNode) Then dctWeaveNodes2.Add(iNode, iwNode)
             End If
 
-            If Not dctWeaveNodes.Exists(CStr(jwNode)) Then
+            If Not dctWeaveNodes.ContainsKey(CStr(jwNode)) Then
                 '[050407]hyu:
                 '             pQF = New QueryFilter
                 '            pQF.WhereClause = "Scen_Node = " + CStr(jNode)
@@ -3778,7 +3778,7 @@ End Function
                 '             pJFeat = pFCj.NextFeature
 
                 '[051507]hyu: if the weavenode is a junction, it's the split point for case 2 during weave link creation
-                If dctJcts.Exists(CStr(jwNode)) Then
+                If dctJcts.ContainsKey(CStr(jwNode)) Then
                     pJFeat = dctJcts.Item(jwNode)
                     pPoint = pJFeat.ShapeCopy
                 Else
@@ -3806,14 +3806,14 @@ End Function
             For j = 0 To 1
                 bWeaveNodeExists = False
                 If j = 0 Then
-                    If dctWeaveNodes2.Exists(iNode) Then
+                    If dctWeaveNodes2.ContainsKey(iNode) Then
                         pFeat.Value(pFeat.Fields.FindField(lType & "_I")) = dctWeaveNodes2.Item(iNode)
 
                         bWeaveNodeExists = True
                         iwNode = dctWeaveNodes2.Item(iNode)
                     End If
                 Else
-                    If dctWeaveNodes2.Exists(JNode) Then
+                    If dctWeaveNodes2.ContainsKey(JNode) Then
                         pFeat.Value(pFeat.Fields.FindField(lType & "_J")) = dctWeaveNodes2.Item(JNode)
                         bWeaveNodeExists = True
                         jwNode = dctWeaveNodes.Item(JNode)
@@ -3989,7 +3989,7 @@ End Function
 
                                 If same < 3 Then    'not the base link
                                     '[050407] hyu
-                                    If dctJcts.Exists(nodeID) Then
+                                    If dctJcts.ContainsKey(nodeID) Then
                                         pJFeat = dctJcts.Item(nodeID)
                                         '                             pFCj = m_junctShp.Search(pQF, False)
                                         '                            If (m_junctShp.featurecount(pQF) > 0) Then
@@ -4053,7 +4053,7 @@ End Function
                                             If iLanes = 0 Then fie = True
                                             If fVerboseLog Then WriteLogLine("ilanes" + CStr(iLanes))
                                         End If  'angle
-                                    End If  'dctJcts.Exists(nodeID)
+                                    End If  'dctJcts.ContainsKey(nodeID)
                                 End If  'same<3
                             End If  'pefeat.OID = pFeat.OID
                             pefeat = pFC.NextFeature
@@ -4210,7 +4210,7 @@ End Function
                                 ' pFC = m_junctShp.Search(pQF, False)
                                 'If (m_junctShp.featurecount(pQF)) Then
                                 '     pJFeat = pFC.NextFeature
-                                If dctJcts.Exists(nodeID) Then
+                                If dctJcts.ContainsKey(nodeID) Then
                                     pJFeat = dctJcts.Item(nodeID)
 
                                     If j = 0 Then
@@ -4278,7 +4278,7 @@ End Function
                                         If fVerboseLog Then WriteLogLine(ptstring)
                                         If fVerboseLog Then WriteLogLine(wString)
                                     End If  'j
-                                End If  'dctjcts.Exists
+                                End If  'dctjcts.ContainsKey
 
                             Else    'wcase=2
 
@@ -4352,10 +4352,10 @@ End Function
 
                                 Else
                                     pNString = " "
-                                    SplitFeatureByM(pIedge, Leng, tempnode, newPt, lType, dctEdges, dctJcts, dctWNs, dctWNs, pNString)
+                                    'SplitFeatureByM(pIedge, Leng, tempnode, newPt, lType, dctEdges, dctJcts, dctWNs, dctWNs, pNString)
                                     updateTransitLines(newPt)
                                     Debug.Print("split " & pIedge.OID)
-                                    Debug.Print("create " & dctEdges.Items(dctEdges.Count - 1))
+                                    'Debug.Print("create " & ctype((dctEdges.Item(dctEdges.Count - 1), string)
                                 End If
 
 
@@ -4502,7 +4502,7 @@ End Function
                         ' pFC = m_junctShp.Search(pQF, False)
                         'If (m_junctShp.featurecount(pQF)) Then
                         '     pJFeat = pFC.NextFeature
-                        If dctJcts.Exists(nodeID) Then
+                        If dctJcts.ContainsKey(nodeID) Then
                             pJFeat = dctJcts.Item(nodeID)
                             If j = 0 Then
                                 pPoint = getWeavenode(pJFeat, lType)
@@ -4560,15 +4560,15 @@ End Function
                                 If fVerboseLog Then WriteLogLine(ptstring)
                                 If fVerboseLog Then WriteLogLine(wString)
                             End If  'j
-                        End If  'dctJcts.Exists(nodeID)
+                        End If  'dctJcts.ContainsKey(nodeID)
                     End If  'm_edgeShp.featurecount(pFilter) <= 2
                     If j = 0 Then
-                        If Not dctWeaveNodes.Exists(CStr(iwNode)) Then
+                        If Not dctWeaveNodes.ContainsKey(CStr(iwNode)) Then
                             dctWeaveNodes.Add(CStr(iwNode), iwNode)
                             dctWeaveNodes2.Add(iNode, iwNode)
                         End If
                     Else
-                        If Not dctWeaveNodes.Exists(CStr(jwNode)) Then
+                        If Not dctWeaveNodes.ContainsKey(CStr(jwNode)) Then
                             dctWeaveNodes.Add(CStr(jwNode), jwNode)
                             dctWeaveNodes2.Add(JNode, jwNode)
                         End If
@@ -4849,21 +4849,21 @@ Public Sub create_NetFile0(pathnameN As String, filenameN As String, pWS As IWor
         'pan frmNetLayer.Refresh
 
         Dim pcount As Long
-        Dim dctReservedNodes As Dictionary  '[042506] hyu: dictionary for reserved nodes: key=PSRCJunctId, item=Emme2Node
-        Dim dctWeaveNodes As Dictionary     '[051106] hyu: dictionary for weave nodes not physically in the ScenarioJunct layer
-        Dim dctWeaveNodes2 As Dictionary    '[052007] hyu: dictionary for junctions and corresponding weave nodes
+        Dim dctReservedNodes As Dictionary(Of Object, Object)  '[042506] hyu: dictionary for reserved nodes: key=PSRCJunctId, item=Emme2Node
+        Dim dctWeaveNodes As Dictionary(Of Object, Object)     '[051106] hyu: dictionary for weave nodes not physically in the ScenarioJunct layer
+        Dim dctWeaveNodes2 As Dictionary(Of Object, Object)    '[052007] hyu: dictionary for junctions and corresponding weave nodes
         Dim lPSRCJctID As Long
-        Dim dctJctsCor As Dictionary
+        Dim dctJctsCor As Dictionary(Of Object, Object)
 
-        dctJctsCor = New Dictionary
-        dctReservedNodes = New Dictionary
-        dctWeaveNodes = New Dictionary
-        dctWeaveNodes2 = New Dictionary
+        dctJctsCor = New Dictionary(Of Object, Object)
+        dctReservedNodes = New Dictionary(Of Object, Object)
+        dctWeaveNodes = New Dictionary(Of Object, Object)
+        dctWeaveNodes2 = New Dictionary(Of Object, Object)
 
         '[050407]hyu
-        Dim dctJcts As Dictionary, dctJoints As Dictionary, dctEdgeID As Dictionary, lMaxEdgeOID As Long
+        Dim dctJcts As Dictionary(Of Object, Object), dctJoints As Dictionary(Of Object, Object), dctEdgeID As Dictionary(Of Object, Object), lMaxEdgeOID As Long
         Dim pNewFeat As IFeature
-        dctJcts = New Dictionary
+        dctJcts = New Dictionary(Of Object, Object)
         '     dctJoints = New Dictionary
         '     dctEdgeID = New Dictionary
 
@@ -4889,7 +4889,7 @@ Public Sub create_NetFile0(pathnameN As String, filenameN As String, pWS As IWor
             dctJcts.Add(pFeat.Value(lSFld), pFeat)
 
             If lPSRCJctID <> pFeat.Value(lSFld) Then
-                If Not dctReservedNodes.Exists(CStr(lPSRCJctID)) Then dctReservedNodes.Add(CStr(lPSRCJctID), CStr(pFeat.Value(lSFld)))
+                If Not dctReservedNodes.ContainsKey(CStr(lPSRCJctID)) Then dctReservedNodes.Add(CStr(lPSRCJctID), CStr(pFeat.Value(lSFld)))
             End If
 
             '************************************
@@ -4969,7 +4969,7 @@ Public Sub create_NetFile0(pathnameN As String, filenameN As String, pWS As IWor
 
         '[033106] hyu: declare a lookup dictionary for edges in the ModeAttributes table.  This dictionary replaces the
         'query for row count in the ModeAttributes table.
-        Dim dctMAtt As Dictionary, dctEdges As Dictionary
+        Dim dctMAtt As Dictionary(Of Object, Object), dctEdges As Dictionary(Of Long, Feature)
         Dim bEOF As Boolean, lEdgeCt As Long, sEdgeOID As String, sEdgeID As String
 
         WriteLogLine("start getting all edges and mode attributes " & Now())
@@ -4987,11 +4987,11 @@ Public Sub create_NetFile0(pathnameN As String, filenameN As String, pWS As IWor
         Do Until bEOF
             '[050407] hyu
 
-            pFeat = dctEdges.Items(lEdgeCt)
+            pFeat = dctEdges.Item(lEdgeCt)
             lEdgeCt = lEdgeCt + 1
             If lEdgeCt = dctEdges.Count Then bEOF = True
             WriteLogLine("edge count=" & lEdgeCt & " " & Now())
-            '        sEdgeOID = dctEdges.Items(lEdgeCt)
+            '        sEdgeOID = dctEdges.Item(lEdgeCt)
             '        If Trim(sEdgeOID) <> "" Then
             '             pFeat = m_edgeShp.GetFeature(val(sEdgeOID))
             '
@@ -5002,7 +5002,7 @@ Public Sub create_NetFile0(pathnameN As String, filenameN As String, pWS As IWor
             '                    bEOF = True
             '                    Exit Do
             '                End If
-            '                sEdgeOID = dctEdges.Items(lEdgeCt)
+            '                sEdgeOID = dctEdges.Item(lEdgeCt)
             '            Loop
             '
             '            If bEOF Then Exit Do
@@ -5075,14 +5075,14 @@ Public Sub create_NetFile0(pathnameN As String, filenameN As String, pWS As IWor
                         '                    End If
                         '[042506] hyu: change the way to get correct node id.
                         Tindex = pFeat.Fields.FindField("INode")
-                        If dctReservedNodes.Exists(CStr(pFeat.Value(Tindex))) Then
+                        If dctReservedNodes.ContainsKey(CStr(pFeat.Value(Tindex))) Then
                             nodes = nodes + CStr(dctReservedNodes.Item(CStr(pFeat.Value(Tindex))))
                         Else
                             nodes = nodes + CStr(pFeat.Value(Tindex) + m_Offset)
                         End If
 
                         Tindex = pFeat.Fields.FindField("JNode")
-                        If dctReservedNodes.Exists(CStr(pFeat.Value(Tindex))) Then
+                        If dctReservedNodes.ContainsKey(CStr(pFeat.Value(Tindex))) Then
                             nodes = nodes + " " + CStr(dctReservedNodes.Item(CStr(pFeat.Value(Tindex))))
                         Else
                             nodes = nodes + " " + CStr(pFeat.Value(Tindex) + m_Offset)
@@ -5103,14 +5103,14 @@ Public Sub create_NetFile0(pathnameN As String, filenameN As String, pWS As IWor
                         '                    End If
                         '[042506] hyu: change the way to get correct node id.
                         Tindex = pFeat.Fields.FindField("JNode")
-                        If dctReservedNodes.Exists(CStr(pFeat.Value(Tindex))) Then
+                        If dctReservedNodes.ContainsKey(CStr(pFeat.Value(Tindex))) Then
                             nodes = nodes + CStr(dctReservedNodes.Item(CStr(pFeat.Value(Tindex))))
                         Else
                             nodes = nodes + CStr(pFeat.Value(Tindex) + m_Offset)
                         End If
 
                         Tindex = pFeat.Fields.FindField("INode")
-                        If dctReservedNodes.Exists(CStr(pFeat.Value(Tindex))) Then
+                        If dctReservedNodes.ContainsKey(CStr(pFeat.Value(Tindex))) Then
                             nodes = nodes + " " + CStr(dctReservedNodes.Item(CStr(pFeat.Value(Tindex))))
                         Else
                             nodes = nodes + " " + CStr(pFeat.Value(Tindex) + m_Offset)
@@ -5132,14 +5132,14 @@ Public Sub create_NetFile0(pathnameN As String, filenameN As String, pWS As IWor
                     '                    End If
                     '[042506] hyu: change the way to get correct node id.
                     Tindex = pFeat.Fields.FindField("JNode")
-                    If dctReservedNodes.Exists(CStr(pFeat.Value(Tindex))) Then
+                    If dctReservedNodes.ContainsKey(CStr(pFeat.Value(Tindex))) Then
                         nodes = nodes + CStr(dctReservedNodes.Item(CStr(pFeat.Value(Tindex))))
                     Else
                         nodes = nodes + CStr(pFeat.Value(Tindex) + m_Offset)
                     End If
 
                     Tindex = pFeat.Fields.FindField("INode")
-                    If dctReservedNodes.Exists(CStr(pFeat.Value(Tindex))) Then
+                    If dctReservedNodes.ContainsKey(CStr(pFeat.Value(Tindex))) Then
                         nodes = nodes + " " + CStr(dctReservedNodes.Item(CStr(pFeat.Value(Tindex))))
                     Else
                         nodes = nodes + " " + CStr(pFeat.Value(Tindex) + m_Offset)
@@ -5184,7 +5184,7 @@ Public Sub create_NetFile0(pathnameN As String, filenameN As String, pWS As IWor
                 pQFt.WhereClause = "PSRCEdgeID = " + CStr(pFeat.Value(lSFld))
 
                 '[033106] hyu: change to lookup a dictionary before doing the query
-                If Not dctMAtt.Exists(CStr(pFeat.Value(lSFld))) Then
+                If Not dctMAtt.ContainsKey(CStr(pFeat.Value(lSFld))) Then
                     '             pTC = pTblMode.Search(pQFt, False)
                     '            If (pTblMode.rowcount(pQFt) = 0) Then 'should always be a match in tblmode
                     'jaf--modified to give more info
@@ -5752,11 +5752,11 @@ Public Sub create_NetFile0(pathnameN As String, filenameN As String, pWS As IWor
         pevtPoint = Nothing
         pRow = Nothing
 
-        dctEdges.RemoveAll()
-        dctMAtt.RemoveAll()
-        dctReservedNodes.RemoveAll()
-        dctWeaveNodes.RemoveAll()
-        dctWeaveNodes2.RemoveAll()
+        dctEdges.Clear()
+        dctMAtt.Clear()
+        dctReservedNodes.Clear()
+        dctWeaveNodes.Clear()
+        dctWeaveNodes2.Clear()
         dctEdges = Nothing
         dctMAtt = Nothing
         dctReservedNodes = Nothing
@@ -5796,10 +5796,10 @@ eh:
         pevtPoint = Nothing
         pRow = Nothing
 
-        If Not dctEdges Is Nothing Then dctEdges.RemoveAll()
-        If Not dctMAtt Is Nothing Then dctMAtt.RemoveAll()
-        dctReservedNodes.RemoveAll()
-        dctWeaveNodes.RemoveAll()
+        If Not dctEdges Is Nothing Then dctEdges.Clear()
+        If Not dctMAtt Is Nothing Then dctMAtt.Clear()
+        dctReservedNodes.Clear()
+        dctWeaveNodes.Clear()
         dctEdges = Nothing
         dctMAtt = Nothing
         dctReservedNodes = Nothing
@@ -7320,11 +7320,11 @@ Public Sub Open_NetFile()
    Dim rowcount As Long
    Dim file As Long, filecnt As Long
    Dim firstrun As Boolean
-        Dim dctEdges As Dictionary
+        Dim dctEdges As Dictionary(Of Object, Object)
    
    firstrun = False
    filecnt = 0
-        dctEdges = New Dictionary
+        dctEdges = New Dictionary(Of Object, Object)
     
     
         Debug.Print("Start editing to read punch files at: " & Now())
@@ -7456,15 +7456,15 @@ Public Sub Open_NetFile()
     '            If (firstrun = False) Then
                 Else
                     'still have to check if already created
-                    If Not dctEdges.Exists(CStr(mymodel(13).rowvalue)) Then
-                         pRow = pTable2.CreateRowBuffer
-    '                     pRow2 = pTable2.CreateRow
-    '                     pRow = pRow2
+                            If Not dctEdges.ContainsKey(CStr(mymodel(13).rowvalue)) Then
+                                pRow = pTable2.CreateRowBuffer
+                                '                     pRow2 = pTable2.CreateRow
+                                '                     pRow = pRow2
                                 dctEdges.Add(CStr(mymodel(13).rowvalue), pRow)
-    
-                    Else
-                         pRow = dctEdges.Item(CStr(mymodel(13).rowvalue))
-                    End If
+
+                            Else
+                                pRow = dctEdges.Item(CStr(mymodel(13).rowvalue))
+                            End If
                     
     '                 pQF = New QueryFilter
     '                pQF.WhereClause = "Scen_Link_ID = " + mymodel(13).rowvalue
@@ -7609,7 +7609,7 @@ Public Sub Open_NetFile()
     Dim pIns As ICursor
      pIns = pTable2.Insert(True)
     For i = 0 To dctEdges.count - 1
-         pRow = dctEdges.Items(i)
+            pRow = dctEdges.Item(i)
             pIns.InsertRow(pRow)
         pStatusBar.StepProgressBar
     Next i
@@ -7617,7 +7617,7 @@ Public Sub Open_NetFile()
         Debug.Print("End Inserting rows at: " & Now())
         WriteLogLine("End Inserting rows at: " & Now())
     
-   dctEdges.RemoveAll
+        dctEdges.Clear()
     dctEdges = Nothing
    
 'Debug.Print "Start to save reading punch files at: " & Now()
@@ -8247,7 +8247,7 @@ eh:
         'MsgBox Err.Description, vbExclamation, "createParkRideFile"
     End Sub
 
-    Public Sub createTollsFile(ByVal pathName As String, ByVal filename As String, ByVal dctReservedNodes As Dictionary, ByVal app As IApplication, ByVal projRteFL As IFeatureLayer)
+    Public Sub createTollsFile(ByVal pathName As String, ByVal filename As String, ByVal dctReservedNodes As Dictionary(Of Object, Object), ByVal app As IApplication, ByVal projRteFL As IFeatureLayer)
         'creates Toll buildfile(s) for Emme2
         'on error GoTo eh
         Try
@@ -8371,14 +8371,14 @@ eh:
             Dim pFilt2 As ISpatialFilter
             Dim lPrjRteID As Long
             Dim dir As Integer, dirPrj As Integer
-            Dim dct As Dictionary
+            Dim dct As Dictionary(Of Object, Object)
             Dim iNode As Long, JNode As Long, iUseEmmeN As Integer
             'Dim pSort As ITableSort
 
             psort = New TableSort
             pFilt = New QueryFilter
             pFilt2 = New SpatialFilter
-            dct = New Dictionary
+            dct = New Dictionary(Of Object, Object)
 
 
             pFClsPrjRte = projRteFL.FeatureClass
@@ -8496,7 +8496,7 @@ eh:
                     strLineI = iNode & " " & JNode & " "
                     strLineJ = JNode & " " & iNode & " "
                     lEdgeID = pFtEdge.Value(fldEdgeID1)
-                    If Not dct.Exists(CType(lEdgeID, Integer)) Then
+                    If Not dct.ContainsKey(CType(lEdgeID, Integer)) Then
 
                         '            If pFtEdge.value(fldUpdate) = "Yes" Then 'with a tip project
                         'handled later with future projects
@@ -8815,7 +8815,7 @@ Sub SelectByLocation0(pFLayer1 As IFeatureLayer, pFLayer2 As IFeatureLayer, pFSe
             pIQ2.IntersectedFeatures(pFeat.Shape, vOIDs)
             If Not vOIDs Is Nothing Then
                 For l = 0 To UBound(vOIDs)
-                    If Not pDict.Exists(vOIDs(l)) Then
+                    If Not pDict.ContainsKey(vOIDs(l)) Then
                         pDict.Add(vOIDs(l), 0)
                     End If
                 Next l
@@ -9230,14 +9230,14 @@ Public Function deleteAllRows(pWSedit As IWorkspaceEdit, pTbl As ITable)
         pWSedit.StopEditing(True)
         Debug.Print("finish saving deleting: " & Now())
     End Function
-    Public Sub getMAtts(ByVal pFClsEdge As IFeatureClass, ByVal pTbl As ITable, ByVal EdgeIDFld As String, ByVal dctEdge As Dictionary, ByVal dctMAtt As Dictionary)
+    Public Sub getMAtts(ByVal pFClsEdge As IFeatureClass, ByVal pTbl As ITable, ByVal EdgeIDFld As String, ByVal dctEdge As Dictionary(Of Long, Feature), ByVal dctMAtt As Dictionary(Of Object, Object))
 
         '[062007] jaf:  appears to populate dctEdge and dctMAtt with ScenarioEdge and related modeAttributes records respectively
 
-        Dim dctEdge2 As Dictionary
-        dctEdge2 = New Dictionary
-        If dctEdge Is Nothing Then dctEdge = New Dictionary
-        If dctMAtt Is Nothing Then dctMAtt = New Dictionary
+        Dim dctEdge2 As Dictionary(Of Object, Object)
+        dctEdge2 = New Dictionary(Of Object, Object)
+        If dctEdge Is Nothing Then dctEdge = New Dictionary(Of Long, Feature)
+        If dctMAtt Is Nothing Then dctMAtt = New Dictionary(Of Object, Object)
 
 
         Dim pDS As IDataset
@@ -9256,10 +9256,10 @@ Public Function deleteAllRows(pWSedit As IWorkspaceEdit, pTbl As ITable)
             sEdgeOID = CStr(pFt.OID)
             sEdgeID = CStr(pFt.Value(fld))
 
-            If Not dctEdge2.Exists(sEdgeID) Then dctEdge2.Add(sEdgeID, sEdgeOID)
+            If Not dctEdge2.ContainsKey(sEdgeID) Then dctEdge2.Add(sEdgeID, sEdgeOID)
             '[050407] hyu
-            'If Not dctEdge.Exists(sEdgeOID) Then dctEdge.Add sEdgeOID, sEdgeOID
-            If Not dctEdge.Exists(sEdgeOID) Then dctEdge.Add(sEdgeOID, pFt)
+            'If Not dctEdge.ContainsKey(sEdgeOID) Then dctEdge.Add sEdgeOID, sEdgeOID
+            If Not dctEdge.ContainsKey(sEdgeOID) Then dctEdge.Add(sEdgeOID, pFt)
             pFt = pFCS.NextFeature
         Loop
 
@@ -9272,8 +9272,8 @@ Public Function deleteAllRows(pWSedit As IWorkspaceEdit, pTbl As ITable)
 
             If Not IsDBNull(pRow.Value(fld)) Then
                 sEdgeID = CStr(pRow.Value(fld))
-                If dctEdge2.Exists(sEdgeID) Then
-                    If Not dctMAtt.Exists(sEdgeID) Then dctMAtt.Add(sEdgeID, pRow)
+                If dctEdge2.ContainsKey(sEdgeID) Then
+                    If Not dctMAtt.ContainsKey(sEdgeID) Then dctMAtt.Add(sEdgeID, pRow)
                 End If
 
             End If
@@ -9282,7 +9282,7 @@ Public Function deleteAllRows(pWSedit As IWorkspaceEdit, pTbl As ITable)
 
         Debug.Print("getMAtt: " & pDS.Name & " end at " & Now())
 
-        dctEdge2.RemoveAll()
+        dctEdge2.Clear()
         dctEdge2 = Nothing
         pCs = Nothing
         '     pEnumV = Nothing
@@ -10555,7 +10555,7 @@ eh:
         GlobalMod.CloseLogFile("GlobalMod.zoomToLayer: eh closed log file due to " & Err.Description)
         Err.Clear()
     End Sub
-    Public Function getAllNodes(ByVal dct As Dictionary)
+    Public Function getAllNodes(ByVal dct As Dictionary(Of Object, Object))
         Dim pCs As ICursor
         Dim pRow As IRow
         Dim fldEID As Long, fldPsrcID As Long
@@ -10601,12 +10601,12 @@ eh:
             lTKI = pRow.Value(fldTKI)
             lTKJ = pRow.Value(fldTKJ)
 
-            If lTRI > 0 And Not dct.Exists(CStr(lTRI)) Then dct.Add(CStr(lTRI), lTRI)
-            If lTRJ > 0 And Not dct.Exists(CStr(lTRJ)) Then dct.Add(CStr(lTRJ), lTRJ)
-            If lHOVI > 0 And Not dct.Exists(CStr(lHOVI)) Then dct.Add(CStr(lHOVI), lHOVI)
-            If lHOVJ > 0 And Not dct.Exists(CStr(lHOVJ)) Then dct.Add(CStr(lHOVJ), lHOVJ)
-            If lTKI > 0 And Not dct.Exists(CStr(lTKI)) Then dct.Add(CStr(lTKI), lTKI)
-            If lTKJ > 0 And Not dct.Exists(CStr(lTKJ)) Then dct.Add(CStr(lTKJ), lTKJ)
+            If lTRI > 0 And Not dct.ContainsKey(CStr(lTRI)) Then dct.Add(CStr(lTRI), lTRI)
+            If lTRJ > 0 And Not dct.ContainsKey(CStr(lTRJ)) Then dct.Add(CStr(lTRJ), lTRJ)
+            If lHOVI > 0 And Not dct.ContainsKey(CStr(lHOVI)) Then dct.Add(CStr(lHOVI), lHOVI)
+            If lHOVJ > 0 And Not dct.ContainsKey(CStr(lHOVJ)) Then dct.Add(CStr(lHOVJ), lHOVJ)
+            If lTKI > 0 And Not dct.ContainsKey(CStr(lTKI)) Then dct.Add(CStr(lTKI), lTKI)
+            If lTKJ > 0 And Not dct.ContainsKey(CStr(lTKJ)) Then dct.Add(CStr(lTKJ), lTKJ)
 
             pRow = pCs.NextRow
         Loop
@@ -11398,7 +11398,7 @@ ReleaseObjs:
 
         GetDwellTime2 = str
     End Function
-    Public Function GetTransitPointsByLineID(ByVal dct As Dictionary, ByVal dct2 As Dictionary, ByVal TransitPointFC As IFeatureClass, ByVal LineID As Long)
+    Public Function GetTransitPointsByLineID(ByVal dct As Dictionary(Of Object, Object), ByVal dct2 As Dictionary(Of Object, Object), ByVal TransitPointFC As IFeatureClass, ByVal LineID As Long)
         '[080309] SEC: stores all the transit points in a dictionary with a counter as the key. Could not use pointorder as
         'key because there are sequential transit nodes that are on the same node/junction. This was causing a problem and
         'are not included int the dictionary.
@@ -11600,8 +11600,8 @@ ReleaseObjs:
 
             'sort transit segment table by LineID and SegOrder, then loop through the sorted rows
             Dim pSort As ITableSort
-            Dim dctTransitLine As Dictionary
-            dctTransitLine = New Dictionary
+            Dim dctTransitLine As Dictionary(Of Object, Object)
+            dctTransitLine = New Dictionary(Of Object, Object)
             pSort = New TableSort
             pQF = New QueryFilter
 
@@ -11726,7 +11726,7 @@ ReleaseObjs:
                     tempString = "0" + tempString
                 End If
 
-                If Not dctTransitLine.Exists(CStr(pFeatTRoute.Value(idIndex))) Then dctTransitLine.Add(CStr(pFeatTRoute.Value(idIndex)), tempString)
+                If Not dctTransitLine.ContainsKey(CStr(pFeatTRoute.Value(idIndex))) Then dctTransitLine.Add(CStr(pFeatTRoute.Value(idIndex)), tempString)
 
                 'pStatusBar.StepProgressBar()
                 pFeatTRoute = pFCtroute.NextFeature
@@ -11777,14 +11777,14 @@ ReleaseObjs:
 
 
             'get all nodes in the intermediate layer
-            Dim dctNodes As Dictionary
-            dctNodes = New Dictionary
+            Dim dctNodes As Dictionary(Of Object, Object)
+            dctNodes = New Dictionary(Of Object, Object)
             getAllNodes(dctNodes)
             ' pStatusBar.ShowProgressBar("Creating Transit...", 0, tblTSeg.rowcount(pQF), 1, True)
             Dim intTPCounter As Integer
-            Dim dctTransitPoints As Dictionary
-            Dim dctDwellTimes As Dictionary
-            Dim dctStopDistance As Dictionary
+            Dim dctTransitPoints As Dictionary(Of Object, Object)
+            Dim dctDwellTimes As Dictionary(Of Object, Object)
+            Dim dctStopDistance As Dictionary(Of Object, Object)
             'Dim x As Long
             x = 0
             Do Until pRow Is Nothing
@@ -11822,15 +11822,15 @@ ReleaseObjs:
                 'get all the TransitPoints that belong to the route, store them in a dictionary
                 'store their DWTs in another dictionary
                 If x <> pRow.Value(fldLineId) Then
-                    dctTransitPoints = New Dictionary
-                    dctDwellTimes = New Dictionary
-                    dctStopDistance = New Dictionary
+                    dctTransitPoints = New Dictionary(Of Object, Object)
+                    dctDwellTimes = New Dictionary(Of Object, Object)
+                    dctStopDistance = New Dictionary(Of Object, Object)
                     GetTransitPointsByLineID(dctTransitPoints, dctDwellTimes, Pfltransitpoints.FeatureClass, lLineID)
                     intTPCounter = 1
                     x = pRow.Value(fldLineId)
                     GetStopDistances(lLineID, dctStopDistance, tblTSeg, dctTransitPoints)
                 End If
-                Do Until dctTransitLine.Exists(CStr(lLineID))
+                Do Until dctTransitLine.ContainsKey(CStr(lLineID))
                     'if transit info doesn't exist, then skip all the records of this line.
                     pRow = pTC.NextRow
                     'pStatusBar.StepProgressBar()
@@ -11917,10 +11917,10 @@ ReleaseObjs:
                 nextNode = pRow.Value(fldJNode)
 
                 If curNode <> preNode Then
-                    If Not dctNodes.Exists(CStr(curNode)) Then
+                    If Not dctNodes.ContainsKey(CStr(curNode)) Then
                         If fVerboseLog Then WriteLogLine("Line " & lLineID & " Node " & curNode & " SegOrder=" & lSegOrder & " dissolved")
 
-                    Else    'dctNodes.Exists(CStr(curNode))
+                    Else    'dctNodes.ContainsKey(CStr(curNode))
                         'form an edge of preNode-curNode
                         'check whether it should use the GP/TR/HOV lane
                         'if the nodes dosn't exist, skip it.
@@ -12112,8 +12112,8 @@ ReleaseObjs:
             pTLineFCls = Nothing
             pFeature = Nothing
             WriteLogLine("FINISHED create_TransitFile at " & Now())
-            dctTransitLine.RemoveAll()
-            dctNodes.RemoveAll()
+            dctTransitLine.Clear()
+            dctNodes.Clear()
             dctTransitLine = Nothing
             dctNodes = Nothing
 
@@ -12274,8 +12274,8 @@ ReleaseObjs:
 
         'sort transit segment table by LineID and SegOrder, then loop through the sorted rows
         Dim pSort As ITableSort
-        Dim dctTransitLine As Dictionary
-        dctTransitLine = New Dictionary
+        Dim dctTransitLine As Dictionary(Of Object, Object)
+        dctTransitLine = New Dictionary(Of Object, Object)
         pSort = New TableSort
         pQF = New QueryFilter
 
@@ -12400,7 +12400,7 @@ ReleaseObjs:
                 tempString = "0" + tempString
             End If
 
-            If Not dctTransitLine.Exists(CStr(pFeatTRoute.Value(idIndex))) Then dctTransitLine.Add(CStr(pFeatTRoute.Value(idIndex)), tempString)
+            If Not dctTransitLine.ContainsKey(CStr(pFeatTRoute.Value(idIndex))) Then dctTransitLine.Add(CStr(pFeatTRoute.Value(idIndex)), tempString)
 
             'pStatusBar.StepProgressBar()
             pFeatTRoute = pFCtroute.NextFeature
@@ -12451,14 +12451,14 @@ ReleaseObjs:
 
 
         'get all nodes in the intermediate layer
-        Dim dctNodes As Dictionary
-        dctNodes = New Dictionary
+        Dim dctNodes As Dictionary(Of Object, Object)
+        dctNodes = New Dictionary(Of Object, Object)
         getAllNodes(dctNodes)
         ' pStatusBar.ShowProgressBar("Creating Transit...", 0, tblTSeg.rowcount(pQF), 1, True)
         Dim intTPCounter As Integer
-        Dim dctTransitPoints As Dictionary
-        Dim dctDwellTimes As Dictionary
-        Dim dctStopDistance As Dictionary
+        Dim dctTransitPoints As Dictionary(Of Object, Object)
+        Dim dctDwellTimes As Dictionary(Of Object, Object)
+        Dim dctStopDistance As Dictionary(Of Object, Object)
         'Dim x As Long
         x = 0
         Do Until pRow Is Nothing
@@ -12496,15 +12496,15 @@ ReleaseObjs:
             'get all the TransitPoints that belong to the route, store them in a dictionary
             'store their DWTs in another dictionary
             If x <> pRow.Value(fldLineId) Then
-                dctTransitPoints = New Dictionary
-                dctDwellTimes = New Dictionary
-                dctStopDistance = New Dictionary
+                dctTransitPoints = New Dictionary(Of Object, Object)
+                dctDwellTimes = New Dictionary(Of Object, Object)
+                dctStopDistance = New Dictionary(Of Object, Object)
                 GetTransitPointsByLineID(dctTransitPoints, dctDwellTimes, Pfltransitpoints.FeatureClass, lLineID)
                 intTPCounter = 1
                 x = pRow.Value(fldLineId)
                 GetStopDistances(lLineID, dctStopDistance, tblTSeg, dctTransitPoints)
             End If
-            Do Until dctTransitLine.Exists(CStr(lLineID))
+            Do Until dctTransitLine.ContainsKey(CStr(lLineID))
                 'if transit info doesn't exist, then skip all the records of this line.
                 pRow = pTC.NextRow
                 'pStatusBar.StepProgressBar()
@@ -12591,10 +12591,10 @@ ReleaseObjs:
             nextNode = pRow.Value(fldJNode)
 
             If curNode <> preNode Then
-                If Not dctNodes.Exists(CStr(curNode)) Then
+                If Not dctNodes.ContainsKey(CStr(curNode)) Then
                     If fVerboseLog Then WriteLogLine("Line " & lLineID & " Node " & curNode & " SegOrder=" & lSegOrder & " dissolved")
 
-                Else    'dctNodes.Exists(CStr(curNode))
+                Else    'dctNodes.ContainsKey(CStr(curNode))
                     'form an edge of preNode-curNode
                     'check whether it should use the GP/TR/HOV lane
                     'if the nodes dosn't exist, skip it.
@@ -12747,7 +12747,7 @@ ReleaseObjs:
                         preWNode = 0
                         nextWNode = 0
                     End If  'lUseGP = 0
-                End If  'Not dctNodes.Exists(CStr(curNode))
+                End If  'Not dctNodes.ContainsKey(CStr(curNode))
             End If  'curNode <> preNode
             pRow = pTC.NextRow
 
@@ -12777,8 +12777,8 @@ ReleaseObjs:
         pTLineFCls = Nothing
         pFeature = Nothing
         WriteLogLine("FINISHED create_TransitFile at " & Now())
-        dctTransitLine.RemoveAll()
-        dctNodes.RemoveAll()
+        dctTransitLine.Clear()
+        dctNodes.Clear()
         dctTransitLine = Nothing
         dctNodes = Nothing
         Exit Sub
@@ -12938,8 +12938,8 @@ eh:
 
             'sort transit segment table by LineID and SegOrder, then loop through the sorted rows
             Dim psort As ITableSort
-            Dim dctTransitLine As Dictionary
-            dctTransitLine = New Dictionary
+            Dim dctTransitLine As Dictionary(Of Object, Object)
+            dctTransitLine = New Dictionary(Of Object, Object)
             psort = New TableSort
             pQF = New QueryFilter
 
@@ -13061,7 +13061,7 @@ eh:
                     tempString = "0" + tempString
                 End If
 
-                If Not dctTransitLine.Exists(CStr(pFeatTRoute.Value(idIndex))) Then dctTransitLine.Add(CStr(pFeatTRoute.Value(idIndex)), tempString)
+                If Not dctTransitLine.ContainsKey(CStr(pFeatTRoute.Value(idIndex))) Then dctTransitLine.Add(CStr(pFeatTRoute.Value(idIndex)), tempString)
 
                 'pStatusBar.StepProgressBar()
                 pFeatTRoute = pFCtroute.NextFeature
@@ -13110,13 +13110,13 @@ eh:
 
 
             'get all nodes in the intermediate layer
-            Dim dctNodes As Dictionary
-            dctNodes = New Dictionary
+            Dim dctNodes As Dictionary(Of Object, Object)
+            dctNodes = New Dictionary(Of Object, Object)
             getAllNodes(dctNodes)
             'pStatusBar.ShowProgressBar("Creating Transit...", 0, tblTSeg.RowCount(pQF), 1, True)
             Dim intTPCounter As Integer
-            Dim dctTransitPoints As Dictionary
-            Dim dctDwellTimes As Dictionary
+            Dim dctTransitPoints As Dictionary(Of Object, Object)
+            Dim dctDwellTimes As Dictionary(Of Object, Object)
             'Dim x As Long
             x = 0
             Do Until pRow Is Nothing
@@ -13127,13 +13127,13 @@ eh:
                 'get all the TransitPoints that belong to the route, store them in a dictionary
                 'store their DWTs in another dictionary
                 If x <> pRow.Value(fldLineId) Then
-                    dctTransitPoints = New Dictionary
-                    dctDwellTimes = New Dictionary
+                    dctTransitPoints = New Dictionary(Of Object, Object)
+                    dctDwellTimes = New Dictionary(Of Object, Object)
                     GetTransitPointsByLineID(dctTransitPoints, dctDwellTimes, Pfltransitpoints.FeatureClass, lLineID)
                     intTPCounter = 1
                     x = pRow.Value(fldLineId)
                 End If
-                Do Until dctTransitLine.Exists(CStr(lLineID))
+                Do Until dctTransitLine.ContainsKey(CStr(lLineID))
                     'if transit info doesn't exist, then skip all the records of this line.
                     pRow = pTC.NextRow
                     'pStatusBar.StepProgressBar()
@@ -13217,10 +13217,10 @@ eh:
                 nextNode = pRow.Value(fldJNode)
 
                 If curNode <> preNode Then
-                    If Not dctNodes.Exists(CStr(curNode)) Then
+                    If Not dctNodes.ContainsKey(CStr(curNode)) Then
                         If fVerboseLog Then WriteLogLine("Line " & lLineID & " Node " & curNode & " SegOrder=" & lSegOrder & " dissolved")
 
-                    Else    'dctNodes.Exists(CStr(curNode))
+                    Else    'dctNodes.ContainsKey(CStr(curNode))
                         'form an edge of preNode-curNode
                         'check whether it should use the GP/TR/HOV lane
                         'if the nodes dosn't exist, skip it.
@@ -13354,7 +13354,7 @@ eh:
                             preWNode = 0
                             nextWNode = 0
                         End If  'lUseGP = 0
-                    End If  'Not dctNodes.Exists(CStr(curNode))
+                    End If  'Not dctNodes.ContainsKey(CStr(curNode))
                 End If  'curNode <> preNode
                 pRow = pTC.NextRow
 
@@ -13378,8 +13378,8 @@ eh:
             pTLineFCls = Nothing
             pFeature = Nothing
             WriteLogLine("FINISHED create_TransitFile at " & Now())
-            dctTransitLine.RemoveAll()
-            dctNodes.RemoveAll()
+            dctTransitLine.Clear()
+            dctNodes.Clear()
             dctTransitLine = Nothing
             dctNodes = Nothing
 
@@ -13497,7 +13497,7 @@ ExitFunction:
         pLy = Nothing
 
     End Function
-    Public Function GetStopDistances(ByVal LineID As Long, ByVal dct As Dictionary, ByVal TransitSegments As ITable, ByVal dctTP As Dictionary)
+    Public Function GetStopDistances(ByVal LineID As Long, ByVal dct As Dictionary(Of Object, Object), ByVal TransitSegments As ITable, ByVal dctTP As Dictionary(Of Object, Object))
         Dim pCursor As ICursor
         Dim pFilter As IQueryFilter
         Dim pRow As IRow
@@ -13533,10 +13533,10 @@ ExitFunction:
         Dim test As Boolean
         test = False
         pRow = pCursor.NextRow
-        lngDist = pRow.value(indexDist)
+        lngDist = pRow.Value(indexDist)
         Do Until pRow Is Nothing
-            INode = pRow.value(indexINode)
-            JNode = pRow.value(indexJNode)
+            INode = pRow.Value(indexINode)
+            JNode = pRow.Value(indexJNode)
 
             'Check to see if we are at the last transit point Transit Point
             'if so, we need to do some different accounting
@@ -13577,7 +13577,7 @@ ExitFunction:
 
 
             Else
-                lngDist = lngDist + pRow.value(indexDist)
+                lngDist = lngDist + pRow.Value(indexDist)
 
 
             End If

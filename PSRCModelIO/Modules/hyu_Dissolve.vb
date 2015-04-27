@@ -92,8 +92,8 @@ Module hyu_Dissolve
 
     'Public Sub selectByAtt(pEdgeFcls As IFeatureClass, pJunctLy As IFeatureLayer)
     Public Sub selectJunctByAtt(ByVal pEdgeFcls As IFeatureClass, ByVal pJunctLy As IFeatureLayer, ByVal pToJctFCls As IFeatureClass)
-        Dim dctJcts As Dictionary
-        dctJcts = New Dictionary
+        Dim dctJcts As Dictionary(Of Object, Object)
+        dctJcts = New Dictionary(Of Object, Object)
         getNodes(pEdgeFcls, g_INode, dctJcts)
         getNodes(pEdgeFcls, g_JNode, dctJcts)
 
@@ -115,7 +115,7 @@ Module hyu_Dissolve
         pFt = pFCS.NextFeature
         Do Until pFt Is Nothing
             If Not IsDBNull(pFt.Value(fldJctID)) Then
-                If dctJcts.Exists(CStr(pFt.Value(fldJctID))) Then
+                If dctJcts.ContainsKey(CStr(pFt.Value(fldJctID))) Then
                     pFBuf = pFCls2.CreateFeatureBuffer
                     With pFBuf
                         .Shape = pFt.ShapeCopy
@@ -138,7 +138,7 @@ Module hyu_Dissolve
         pFCls = Nothing
         pFCls2 = Nothing
         pFCS = Nothing
-        dctJcts.RemoveAll()
+        dctJcts.Clear()
         dctJcts = Nothing
         '    Dim pFilt As IQueryFilter
         '    Set pFilt = New QueryFilter
@@ -313,13 +313,13 @@ Module hyu_Dissolve
         pCounter = 1
 
         '[022406] hyu: get those nodes/edges that can/cannot be thinned into dictionaries.
-        Dim dctNoThinNodes As Dictionary, dctNoThinEdges As Dictionary, dctThinEdges As Dictionary
+        Dim dctNoThinNodes As Dictionary(Of Object, Object), dctNoThinEdges As Dictionary(Of Object, Object), dctThinEdges As Dictionary(Of Object, Object)
         'dctNoThinNodes consists of nodes cannot be thinned
         'dctThinEdges consists of edges that are possible be thinned.
 
-        dctNoThinNodes = New Dictionary
-        dctThinEdges = New Dictionary
-        dctNoThinEdges = New Dictionary
+        dctNoThinNodes = New Dictionary(Of Object, Object)
+        dctThinEdges = New Dictionary(Of Object, Object)
+        dctNoThinEdges = New Dictionary(Of Object, Object)
         WriteLogLine(Now() & " start collecting nodes and edges ")
 
         '  [050306] hyu: transitSegment
@@ -352,13 +352,13 @@ Module hyu_Dissolve
         WriteLogLine(Now() & " finish collecting edges can NOT be thinned : " & dctNoThinEdges.Count)
 
         '[022406] hyu: stats how many edges joining to a junction
-        Dim dctJoinEdges As Scripting.Dictionary
-        Dim dctJcts As Scripting.Dictionary
-        Dim dctEdgeID As Scripting.Dictionary
+        Dim dctJoinEdges As Dictionary(Of Object, Object)
+        Dim dctJcts As Dictionary(Of Object, Object)
+        Dim dctEdgeID As Dictionary(Of Object, Object)
         Dim lMaxEdgeOID As Long
-        dctJoinEdges = New Dictionary
-        dctJcts = New Dictionary
-        '  Set dctEdgeID = New Dictionary
+        dctJoinEdges = New Dictionary(Of Object, Object)
+        dctJcts = New Dictionary(Of Object, Object)
+        '  Set dctEdgeID = New Dictionary(Of Object, Object)
         'calcEdgesAtJoint m_edgeShp, g_INode, g_JNode, dctJoinEdges, dctJcts, dctEdgeID
         calcEdgesAtJoint(m_edgeShp, m_junctShp, g_INode, g_JNode, dctJoinEdges, dctJcts, dctEdgeID, lMaxEdgeOID)
 
@@ -384,7 +384,7 @@ Module hyu_Dissolve
         lCreatedEdges = 0
 
         pSFilt = New SpatialFilter
-        sNodes = dctJcts.Keys
+        sNodes = dctJcts.Keys.ToArray
         pQFj = New QueryFilter
         pQF = New QueryFilter
         pQF2 = New QueryFilter
@@ -409,14 +409,14 @@ Module hyu_Dissolve
             edgesdelete = False
             '    If dnode = 1023 Then MsgBox "here"
 
-            If Not dctNoThinNodes.Exists(sNode) Then
-                If dctJoinEdges.Exists(sNode) Then
+            If Not dctNoThinNodes.ContainsKey(sNode) Then
+                If dctJoinEdges.ContainsKey(sNode) Then
                     sEdgeID = Split(dctJoinEdges.Item(sNode), ",")
 
                     If UBound(sEdgeID) - LBound(sEdgeID) <> 1 Then
                         noMergeCount = noMergeCount + 1
                     Else '2 edges connected at this joint
-                        If dctThinEdges.Exists(sEdgeID(0)) And dctThinEdges.Exists(sEdgeID(1)) And (Not (dctNoThinEdges.Exists(sEdgeID(0)) Or dctNoThinEdges.Exists(sEdgeID(1)))) Then
+                        If dctThinEdges.ContainsKey(sEdgeID(0)) And dctThinEdges.ContainsKey(sEdgeID(1)) And (Not (dctNoThinEdges.ContainsKey(sEdgeID(0)) Or dctNoThinEdges.ContainsKey(sEdgeID(1)))) Then
 
                             '[061907] jaf: if the two edge ID's are equal we have a problem...
                             If sEdgeID(0) = sEdgeID(1) Then
@@ -728,10 +728,10 @@ Module hyu_Dissolve
         '   Set tblTSeg = Nothing
         pWorkspaceEdit = Nothing
 
-        dctNoThinEdges.RemoveAll()
-        dctThinEdges.RemoveAll()
-        dctNoThinNodes.RemoveAll()
-        dctJcts.RemoveAll()
+        dctNoThinEdges.Clear()
+        dctThinEdges.Clear()
+        dctNoThinNodes.Clear()
+        dctJcts.Clear()
 
         dctNoThinEdges = Nothing
         dctThinEdges = Nothing
@@ -801,7 +801,7 @@ ErrChk:
    
 
 
-    Public Sub getNodes(ByVal pTbl As ITable, ByVal NodeIDFld As String, ByVal dctNodes As Dictionary, Optional ByVal sWhereClause As String = "", Optional ByVal bModeAtt As Boolean = False)
+    Public Sub getNodes(ByVal pTbl As ITable, ByVal NodeIDFld As String, ByVal dctNodes As Dictionary(Of Object, Object), Optional ByVal sWhereClause As String = "", Optional ByVal bModeAtt As Boolean = False)
         Dim fld As Long
         fld = pTbl.FindField(NodeIDFld)
         Dim pDS As IDataset
@@ -810,7 +810,7 @@ ErrChk:
         Dim pCs As ICursor, pRow As IRow
         Dim sNodeID As String
 
-        If dctNodes Is Nothing Then dctNodes = New Dictionary
+        If dctNodes Is Nothing Then dctNodes = New Dictionary(Of Object, Object)
         If bModeAtt Then
             '        Dim pRow As IRow
             pCs = pTbl.Search(Nothing, True)
@@ -818,7 +818,7 @@ ErrChk:
             Do Until pRow Is Nothing
                 If Not IsDBNull(pRow.Value(fld)) Then
                     sNodeID = CStr(pRow.Value(fld))
-                    If Not dctNodes.Exists(sNodeID) Then dctNodes.Add(sNodeID, sNodeID)
+                    If Not dctNodes.ContainsKey(sNodeID) Then dctNodes.Add(sNodeID, sNodeID)
                 End If
                 pRow = pCs.NextRow
             Loop
@@ -863,14 +863,14 @@ ErrChk:
         Catch ex As Exception
             MessageBox.Show(ex.ToString)
         End Try
-       
+
 
         Dim v As Object
 
         Do While pEnumerator.MoveNext
             v = pEnumerator.Current
             sNodeID = CStr(v)
-            If Not dctNodes.Exists(sNodeID) Then dctNodes.Add(sNodeID, sNodeID)
+            If Not dctNodes.ContainsKey(sNodeID) Then dctNodes.Add(sNodeID, sNodeID)
 
             'v = pEnumerator.MoveNext
 
@@ -883,7 +883,7 @@ ErrChk:
         pDS = Nothing
 
     End Sub
-    Public Sub getPRNodes(ByVal pFC As IFeatureClass, ByVal NodeIDFld As String, ByVal StallsFld As String, ByVal dctNodes As Dictionary)
+    Public Sub getPRNodes(ByVal pFC As IFeatureClass, ByVal NodeIDFld As String, ByVal StallsFld As String, ByVal dctNodes As Dictionary(Of Object, Object))
         Dim fld As Long
         fld = pFC.FindField(NodeIDFld)
         Dim pDS As IDataset
@@ -897,7 +897,7 @@ ErrChk:
         pFilter = New QueryFilter
         pFilter.WhereClause = StallsFld & " > 0 "
 
-        'If dctNodes Is Nothing Then Set dctNodes = New Dictionary(of Long, Long)
+        'If dctNodes Is Nothing Then Set dctNodes = New Dictionary(Of Object, Object)(of Long, Long)
         'If bModeAtt Then
         '        Dim pFeat as ifeature
         pFCursor = pFC.Search(pFilter, True)
@@ -905,7 +905,7 @@ ErrChk:
         Do Until pFeat Is Nothing
             If Not IsDBNull(pFeat.Value(fld)) Then
                 sNodeID = CStr(pFeat.Value(fld))
-                If Not dctNodes.Exists(sNodeID) Then dctNodes.Add(sNodeID, sNodeID)
+                If Not dctNodes.ContainsKey(sNodeID) Then dctNodes.Add(sNodeID, sNodeID)
             End If
             pFeat = pFCursor.NextFeature
         Loop
@@ -964,9 +964,9 @@ ErrChk:
 
 
     'Private Sub calcEdgesAtJoint(pEdges As ITable, INodeFld As String, JNodeFld As String, _
-    'dctEdges As Dictionary(of Long, Long), dctJcts As Dictionary(of Long, Long), dctEdgeID As Dictionary(of Long, Long))
+    'dctEdges As Dictionary(Of Object, Object)(of Long, Long), dctJcts As Dictionary(Of Object, Object)(of Long, Long), dctEdgeID As Dictionary(Of Object, Object)(of Long, Long))
     Public Sub calcEdgesAtJoint(ByVal pEdges As IFeatureClass, ByVal pJcts As IFeatureClass, ByVal INodeFld As String, _
-        ByVal JNodeFld As String, ByVal dctEdges As Dictionary, ByVal dctJcts As Dictionary, ByVal dctEdgeID As Dictionary, ByVal lMaxEdgeOID As Long)
+        ByVal JNodeFld As String, ByVal dctEdges As Dictionary(Of Object, Object), ByVal dctJcts As Dictionary(Of Object, Object), ByVal dctEdgeID As Dictionary(Of Object, Object), ByVal lMaxEdgeOID As Long)
         Dim pCs As IFeatureCursor, pFt As IFeature
         Dim fldI As Long, fldJ As Long, fldID As Long, fldJctID As Long
         Dim sI As String, sJ As String, sID As String, sJctID As String
@@ -976,15 +976,15 @@ ErrChk:
         fldID = pEdges.FindField(g_PSRCEdgeID)
         fldJctID = pJcts.FindField(g_PSRCJctID)
 
-        If dctEdges Is Nothing Then dctEdges = New Dictionary
-        If dctJcts Is Nothing Then dctJcts = New Dictionary
-        If dctEdgeID Is Nothing Then dctEdgeID = New Dictionary
+        If dctEdges Is Nothing Then dctEdges = New Dictionary(Of Object, Object)
+        If dctJcts Is Nothing Then dctJcts = New Dictionary(Of Object, Object)
+        If dctEdgeID Is Nothing Then dctEdgeID = New Dictionary(Of Object, Object)
 
         pCs = pJcts.Search(Nothing, False)
         pFt = pCs.NextFeature
         Try
 
-        
+
             Do Until pFt Is Nothing
                 sJctID = CStr(pFt.Value(fldJctID))
                 dctJcts.Add(sJctID, pFt)
@@ -1006,10 +1006,10 @@ ErrChk:
                 sID = CStr(pFt.Value(fldID))
 
                 '            If Not dctEdgeID.Exists(sID) Then dctEdgeID.Add sID, 0
-                If Not dctEdgeID.Exists(sID) Then dctEdgeID.Add(sID, pFt)
+                If Not dctEdgeID.ContainsKey(sID) Then dctEdgeID.Add(sID, pFt)
 
                 '            If sI = "152515" Or sJ = "152515" Then MsgBox "here"
-                If Not dctEdges.Exists(sI) Then
+                If Not dctEdges.ContainsKey(sI) Then
                     dctEdges.Add(sI, sID) 'CStr(pFt.oid)
                     '                dctJcts.Add sI, 1
                 Else
@@ -1017,7 +1017,7 @@ ErrChk:
                     '                dctJcts.Item(sI) = dctJcts.Item(sI) + 1
                 End If
 
-                If Not dctEdges.Exists(sJ) Then
+                If Not dctEdges.ContainsKey(sJ) Then
                     dctEdges.Add(sJ, sID) 'CStr(pFt.oid)
                     '                dctJcts.Add sJ, 1
                 Else
@@ -1033,7 +1033,7 @@ ErrChk:
     End Sub
 
 
-    Private Sub getOID2Dict(ByVal pTbl As ITable, ByVal dctIDs As Dictionary)
+    Private Sub getOID2Dict(ByVal pTbl As ITable, ByVal dctIDs As Dictionary(Of Object, Object))
         Dim pDS As IDataset
         pDS = pTbl
         Debug.Print("getOID2Dict: " & pDS.Name & " start at " & Now())
@@ -1056,7 +1056,7 @@ ErrChk:
 
     End Sub
 
-    Public Sub updateEdgesAtJoint(ByVal dctEdge As Dictionary, ByVal pEdge1 As IFeature, ByVal pEdge2 As IFeature, ByVal pNewEdge As IFeature)
+    Public Sub updateEdgesAtJoint(ByVal dctEdge As Dictionary(Of Object, Object), ByVal pEdge1 As IFeature, ByVal pEdge2 As IFeature, ByVal pNewEdge As IFeature)
         'pEdge1 and pEdge2 are the deleted edges
         'pNewEdge is the new edge.
 
@@ -1090,7 +1090,7 @@ ErrChk:
         End If
     End Sub
 
-    Private Sub removeEdgeAtJoint(ByVal dct As Dictionary, ByVal JunctionID As String, ByVal edgeID As String)
+    Private Sub removeEdgeAtJoint(ByVal dct As Dictionary(Of Object, Object), ByVal JunctionID As String, ByVal edgeID As String)
         Dim sEIDs As String
         Dim sSplit() As String
         '    If JunctionID = "152515" Then MsgBox "here"
@@ -1243,8 +1243,8 @@ ErrChk:
         Dim pRow As IRow
         Dim fldSceID As Long, fldSceLink As Long, fldPSRCEdgeID As Long, fldPSRCE2Id As Long, fldINode As Long, fldJNode As Long, fldUseEmmeN As Long
         Dim fldSceID2 As Long, fldSceNode As Long, fldPSRCJctID As Long, fldEmme2NodeId As Long, fldPSRCE2Id2 As Long
-        Dim dctEmme2Node As Dictionary 'key=PSRCJunctID, item=Emme2NodeID; list of the reserved nodes for Emme2 centroids, park and ride
-        dctEmme2Node = New Dictionary
+        Dim dctEmme2Node As Dictionary(Of Object, Object) 'key=PSRCJunctID, item=Emme2NodeID; list of the reserved nodes for Emme2 centroids, park and ride
+        dctEmme2Node = New Dictionary(Of Object, Object)
 
         With pEdgeTbl
             fldSceID = .FindField("ScenarioID")
@@ -1282,7 +1282,7 @@ ErrChk:
             '[092707] hyu: per Jeff's email on 092607. the Emme2NodeID should be less than the user defined offset
             'If lEmme2NodeID > 0 Then
             If lEmme2NodeID > 0 And lEmme2NodeID <= m_Offset Then
-                If Not dctEmme2Node.Exists(CStr(lPSRCJctID)) Then dctEmme2Node.Add(CStr(lPSRCJctID), lEmme2NodeID)
+                If Not dctEmme2Node.ContainsKey(CStr(lPSRCJctID)) Then dctEmme2Node.Add(CStr(lPSRCJctID), lEmme2NodeID)
                 pRow.value(fldSceNode) = lEmme2NodeID
             Else
                 pRow.value(fldSceNode) = pRow.value(fldPSRCJctID) + m_Offset
@@ -1308,17 +1308,17 @@ ErrChk:
             'UseEmmeN=1: Only INode is reserved
             'UseEmmeN=2: Only JNode is reserved
             'UseEmmeN=3: Both INode and Jnode are reserved
-            If dctEmme2Node.Exists(CStr(pRow.value(fldINode))) Then
-                If dctEmme2Node.Exists(CStr(pRow.value(fldJNode))) Then
-                    pRow.value(fldUseEmmeN) = 3
+            If dctEmme2Node.ContainsKey(CStr(pRow.Value(fldINode))) Then
+                If dctEmme2Node.ContainsKey(CStr(pRow.Value(fldJNode))) Then
+                    pRow.Value(fldUseEmmeN) = 3
                 Else
-                    pRow.value(fldUseEmmeN) = 1
+                    pRow.Value(fldUseEmmeN) = 1
                 End If
             Else
-                If dctEmme2Node.Exists(CStr(pRow.value(fldJNode))) Then
-                    pRow.value(fldUseEmmeN) = 2
+                If dctEmme2Node.ContainsKey(CStr(pRow.Value(fldJNode))) Then
+                    pRow.Value(fldUseEmmeN) = 2
                 Else
-                    pRow.value(fldUseEmmeN) = 0
+                    pRow.Value(fldUseEmmeN) = 0
                 End If
             End If
 
@@ -1328,7 +1328,7 @@ ErrChk:
         Loop
 
         pCs = Nothing
-        dctEmme2Node.RemoveAll()
+        dctEmme2Node.Clear()
         dctEmme2Node = Nothing
     End Function
 
@@ -1448,14 +1448,14 @@ ErrChk:
         Dim l As Long
 
         '[022706] hyu: insert this block to replace the old use of selection set.
-        ' use a dictionary to dynamically maintain edges' oid and status, and an cursor to search edges.
+        ' use a Dictionary(Of Object, Object) to dynamically maintain edges' oid and status, and an cursor to search edges.
         ' the old method of using 2 selection sets and cursor dosn't work.
         ' The cursor is initially set from one selection set, then its position cannot be updated dynamically when edges are deleted or generated.
-        Dim dctEdges As Dictionary '(key=PSRCJunctID, Item=joined edges' PSRCEdgeID)
-        Dim dctJcts As Dictionary
-        Dim dctEdgeID As Dictionary
+        Dim dctEdges As Dictionary(Of Object, Object) '(key=PSRCJunctID, Item=joined edges' PSRCEdgeID)
+        Dim dctJcts As Dictionary(Of Object, Object)
+        Dim dctEdgeID As Dictionary(Of Object, Object)
         Dim bEOFDict As Boolean
-        dctEdges = New Dictionary
+        dctEdges = New Dictionary(Of Object, Object)
         'getOID2Dict m_edgeShp, dctEdges
         Debug.Print("CalcEdges@joint: " & Now())
 
@@ -1512,7 +1512,8 @@ ErrChk:
         Dim pFeat3 As IFeature
         lEdgeCt = 0
         'sEdgeIDs = dctEdges.Keys
-        sJctIDs = dctEdges.Keys
+        sJctIDs = dctEdges.Keys.ToArray
+
 
         '[030906] hyu: change the way to loop through ScenarioEdges by looping through a dynamic edge dictionary
         Dim sEdges() As String
@@ -1893,7 +1894,7 @@ ErrChk:
 
         t = 0
         For l = 0 To dctEdgeID.count - 1
-            If dctEdgeID.Items(l) = 1 Then t = t + 1
+            If dctEdgeID.Item(l) = 1 Then t = t + 1
         Next l
 
         WriteLogLine("Edges selected= " & l)

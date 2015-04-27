@@ -40,8 +40,8 @@ Module Retrace
         Dim l, K, m, n As Long, lSeq As Long
         Dim pPtCol As IPointCollection
         Dim pPt As IPoint, pPt2 As IPoint
-        Dim dctSeq As Dictionary
-        Dim dctDist As Dictionary
+        Dim dctSeq As Dictionary(Of Object, Object)
+        Dim dctDist As Dictionary(Of Object, Object)
         Dim dDistAlg As Double, dDistFrm As Double, bright As Boolean
         Dim sFidE As String, sFidE2 As String
         Dim sFidsE() As String, sFidsE2() As String
@@ -86,12 +86,12 @@ Module Retrace
         Dim i As Integer
         Dim pSort As ITableSort, pFCS As IFeatureCursor
         Dim sTrLineNo As String, fldTrLineNo As Long
-        Dim dctLine As Dictionary
+        Dim dctLine As Dictionary(Of Object, Object)
         Dim sLineID As String
         Dim pWSedit As IWorkspaceEdit
         pWSedit = g_FWS
 
-        dctSeq = New Dictionary
+        dctSeq = New Dictionary(Of Object, Object)
 
         Dim pFilt As IQueryFilter2
         Dim lModelYear As Long
@@ -139,7 +139,7 @@ Module Retrace
             sSEq = ""
             For i = 0 To dctSeq.Count - 1
                 K = K + 1
-                sSEq = sSEq & "," & dctSeq.Items(i)
+                sSEq = sSEq & "," & dctSeq.Item(i)
                 If K = 20 Then
                     PrintLine(1, sSEq)
                     sSEq = ""
@@ -147,7 +147,7 @@ Module Retrace
                 End If
             Next i
             If sSEq <> "" Then PrintLine(1, sSEq)
-            dctSeq.RemoveAll()
+            dctSeq.Clear()
 
             PrintLine(1, vbNewLine)
             pFt = pFCS.NextFeature
@@ -500,7 +500,7 @@ eh:
 
     End Function
 
-    Private Function getEdges(ByVal pFCls As IFeatureClass, ByVal pRt As IPolyline4, ByVal fromNode As String, ByVal toNode As String, ByVal modelYEAR As Long, Optional ByVal oneWay As String = "") As Dictionary
+    Private Function getEdges(ByVal pFCls As IFeatureClass, ByVal pRt As IPolyline4, ByVal fromNode As String, ByVal toNode As String, ByVal modelYEAR As Long, Optional ByVal oneWay As String = "") As Dictionary(Of Object, Object)
         Dim pSFilt As ISpatialFilter
         pSFilt = New SpatialFilter
         With pSFilt
@@ -514,14 +514,14 @@ eh:
 
         Dim pFCS As IFeatureCursor
         Dim pFt As IFeature
-        Dim dct As Dictionary
+        Dim dct As Dictionary(Of Object, Object)
         Dim fldFromNd As Long, fldToNd As Long, fldOneWay As Long
         Dim sKey As String
         Dim pRelOp As IRelationalOperator
         Dim pfldLength As Integer
         Dim pfeatLength As Long
 
-        dct = New Dictionary
+        dct = New Dictionary(Of Object, Object)
         fldFromNd = pFCls.FindField(fromNode)
         fldToNd = pFCls.FindField(toNode)
         pfldLength = pFCls.FindField("Shape.len")
@@ -539,8 +539,8 @@ eh:
             '        If oneWay <> "" Then
             '            dct.Add sKey, pFt.value(fldOneWay)
             '        End If
-            'If Not dct.Exists(sKey) Then dct.Add sKey, sKey
-            If Not dct.Exists(sKey) Then dct.Add(sKey, pfeatLength)
+            'If Not dct.ContainsKey(sKey) Then dct.Add sKey, sKey
+            If Not dct.ContainsKey(sKey) Then dct.Add(sKey, pfeatLength)
             '        End If
             pFt = pFCS.NextFeature
         Loop
@@ -551,11 +551,11 @@ eh:
         pSFilt = Nothing
     End Function
 
-    Private Function getAllEdges(ByVal pFCls As IFeatureClass, ByVal fromNode As String, ByVal toNode As String, ByVal modelYEAR As Long) As Dictionary
+    Private Function getAllEdges(ByVal pFCls As IFeatureClass, ByVal fromNode As String, ByVal toNode As String, ByVal modelYEAR As Long) As Dictionary(Of Object, Object)
         Dim pFilt As IQueryFilter2
         Dim pFCS As IFeatureCursor
         Dim pFt As IFeature
-        Dim dct As Dictionary
+        Dim dct As Dictionary(Of Object, Object)
         Dim fldFromNd As Long, fldToNd As Long, fldOneWay As Long
         Dim sKey As String
 
@@ -563,7 +563,7 @@ eh:
         pFilt.WhereClause = "INSERVICEDATE<=" & modelYEAR & " AND OUTSERVICEDATE>" & modelYEAR
         pFCS = pFCls.Search(pFilt, False)
 
-        dct = New Dictionary
+        dct = New Dictionary(Of Object, Object)
         fldFromNd = pFCls.FindField(fromNode)
         fldToNd = pFCls.FindField(toNode)
         fldOneWay = pFCls.FindField("OneWay")
@@ -589,7 +589,7 @@ eh:
 
     End Function
 
-    Private Function GetTransitPoints(ByVal pFCls As IFeatureClass, ByVal pRt As IPolyline4, ByVal lineIDField As String, ByVal lineIDValue As String, ByRef pPtCol As IPointCollection4, ByRef dct As Dictionary)
+    Private Function GetTransitPoints(ByVal pFCls As IFeatureClass, ByVal pRt As IPolyline4, ByVal lineIDField As String, ByVal lineIDValue As String, ByRef pPtCol As IPointCollection4, ByRef dct As Dictionary(Of Object, Object))
         Dim pSFilt As ISpatialFilter
         pSFilt = New SpatialFilter
         With pSFilt
@@ -618,7 +618,7 @@ eh:
         pFCS = pSort.Rows
         'Set pFCS = pFCls.Search(pSFilt, False)
         pPtCol = New Multipoint
-        dct = New Dictionary
+        dct = New Dictionary(Of Object, Object)
         fldID = pFCls.FindField("Line")
         fldToNd = pFCls.FindField("toNode")
         fldOneWay = pFCls.FindField("oneWay")
@@ -643,13 +643,13 @@ eh:
     End Function
 
     Private Function SortSequence(ByVal pFClsE As IFeatureClass, ByVal pFClsJ As IFeatureClass, ByVal pFClsTP As IFeatureClass, ByVal plineFt As IFeature, _
-        ByVal pSegTbl As ITable, ByVal dctSeq As Dictionary, ByVal modelYEAR As Long)
+        ByVal pSegTbl As ITable, ByVal dctSeq As Dictionary(Of Object, Object), ByVal modelYEAR As Long)
         Dim pSegCs As ICursor
         Dim pTrLine As IPolyline4
         Dim sLineID As String
         Dim sLineNo As String
         Dim pJctCol As IPointCollection4, pTPCol As IPointCollection4
-        Dim dctE As Dictionary, dctTP As Dictionary, dctN As Dictionary
+        Dim dctE As Dictionary(Of Object, Object), dctTP As Dictionary(Of Object, Object), dctN As Dictionary(Of Object, Object)
 
         pTrLine = plineFt.Shape
         sLineID = plineFt.Value(plineFt.Fields.FindField(g_TrlineID))
@@ -702,15 +702,15 @@ eh:
         pHtPt = New Point
         lSeq = 0
         lct = 0
-        If dctSeq Is Nothing Then dctSeq = New Dictionary
-        dctSeq.RemoveAll()
+        If dctSeq Is Nothing Then dctSeq = New Dictionary(Of Object, Object)
+        dctSeq.Clear()
 
-        dctN = New Dictionary
+        dctN = New Dictionary(Of Object, Object)
         pSegCs = pSegTbl.Insert(True)
         'loop through all the vertices in the transit line
         Try
 
-       
+
             For i = 0 To pPtCol.PointCount - 1
                 pPt = pPtCol.Point(i)
                 'does it hit a junction
@@ -725,7 +725,7 @@ eh:
 
                     'recording the times the nodes has been traversed
                     '2
-                    If dctN.Exists(CType(CurJct, Integer)) Then
+                    If dctN.ContainsKey(CType(CurJct, Integer)) Then
                         'junctCount = junctCount - 1
                         '***********Need to create a counter that keeps track of transit points bette
                         dctN.Item(CType(CurJct, Integer)) = dctN.Item(CType(CurJct, Integer) + 1)
@@ -788,7 +788,7 @@ eh:
                             'check whether this junction and previous junction forms a valid edge
                             'be sure to check both directions
                             sKey = CStr(PreJct) & "-" & CStr(CurJct)
-                            If dctE.Exists(sKey) Then
+                            If dctE.ContainsKey(sKey) Then
                                 edgeLength = dctE.Item(sKey)
                                 edgeCount = edgeCount + 1
                                 lSeq = lSeq + 1
@@ -805,7 +805,7 @@ eh:
                                 dctSeq.Add(dctSeq.Count, CType(CurJct, Integer))
                             Else
                                 sKey = CStr(CurJct) & "-" & CStr(PreJct)
-                                If dctE.Exists(sKey) Then
+                                If dctE.ContainsKey(sKey) Then
                                     edgeLength = dctE.Item(sKey)
                                     edgeCount = edgeCount + 1
                                     lSeq = lSeq + 1

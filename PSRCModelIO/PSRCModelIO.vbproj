@@ -296,8 +296,8 @@
     <Compile Include="Modules\frmUnMap_model.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Modules\hyuNetFile.vb" />
     <Compile Include="Modules\GlobalMod.vb" />
+    <Compile Include="Modules\hyuNetFile.vb" />
     <Compile Include="Modules\hyu_Dissolve.vb" />
     <Compile Include="Modules\hyu_globalVar.vb" />
     <Compile Include="Modules\Retrace.vb" />
@@ -418,6 +418,17 @@
     <EmbeddedResource Include="Modules\frmUnMap_model.resx">
       <DependentUpon>frmUnMap_model.vb</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="Scripting">
+      <Guid>{420B2830-E718-11CF-893D-00A0C9054228}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.VisualBasic.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1528,13 +1528,13 @@ eh:
         pCounter = 1
 
         '[022406] hyu: get those nodes/edges that can/cannot be thinned into dictionaries.
-        Dim dctNoThinNodes As Dictionary, dctNoThinEdges As Dictionary, dctThinEdges As Dictionary
+        Dim dctNoThinNodes As Dictionary(Of Object, Object), dctNoThinEdges As Dictionary(Of Object, Object), dctThinEdges As Dictionary(Of Object, Object)
         'dctNoThinNodes consists of nodes cannot be thinned
         'dctThinEdges consists of edges that are possible be thinned.
 
-        dctNoThinNodes = New Dictionary
-        dctThinEdges = New Dictionary
-        dctNoThinEdges = New Dictionary
+        dctNoThinNodes = New Dictionary(Of Object, Object)
+        dctThinEdges = New Dictionary(Of Object, Object)
+        dctNoThinEdges = New Dictionary(Of Object, Object)
         WriteLogLine(Now() & " start collecting nodes and edges ")
 
         '  [050306] hyu: transitSegment
@@ -1572,13 +1572,13 @@ eh:
         WriteLogLine(Now() & " finish collecting edges can NOT be thinned : " & dctNoThinEdges.Count)
 
         '[022406] hyu: stats how many edges joining to a junction
-        Dim dctJoinEdges As Dictionary
-        Dim dctJcts As Dictionary
-        Dim dctEdgeID As Dictionary
+        Dim dctJoinEdges As Dictionary(Of Object, Object)
+        Dim dctJcts As Dictionary(Of Object, Object)
+        Dim dctEdgeID As Dictionary(Of Object, Object)
         Dim lMaxEdgeOID As Long
-        dctJoinEdges = New Dictionary
-        dctJcts = New Dictionary
-        dctEdgeID = New Dictionary
+        dctJoinEdges = New Dictionary(Of Object, Object)
+        dctJcts = New Dictionary(Of Object, Object)
+        dctEdgeID = New Dictionary(Of Object, Object)
 
         '  Set dctEdgeID = New Dictionary
         'calcEdgesAtJoint m_edgeShp, g_INode, g_JNode, dctJoinEdges, dctJcts, dctEdgeID
@@ -1606,7 +1606,7 @@ eh:
         lCreatedEdges = 0
 
         pSFilt = New SpatialFilter
-        sNodes = dctJcts.Keys
+        sNodes = dctJcts.Keys.ToArray
         pQFj = New QueryFilter
         pQF = New QueryFilter
         pQF2 = New QueryFilter
@@ -1631,14 +1631,14 @@ eh:
             edgesdelete = False
             '    If dnode = 1023 Then MsgBox "here"
 
-            If Not dctNoThinNodes.Exists(sNode) Then
-                If dctJoinEdges.Exists(sNode) Then
+            If Not dctNoThinNodes.ContainsKey(sNode) Then
+                If dctJoinEdges.ContainsKey(sNode) Then
                     sEdgeID = Split(dctJoinEdges.Item(sNode), ",")
 
                     If UBound(sEdgeID) - LBound(sEdgeID) <> 1 Then
                         noMergeCount = noMergeCount + 1
                     Else '2 edges connected at this joint
-                        If dctThinEdges.Exists(sEdgeID(0)) And dctThinEdges.Exists(sEdgeID(1)) And (Not (dctNoThinEdges.Exists(sEdgeID(0)) Or dctNoThinEdges.Exists(sEdgeID(1)))) Then
+                        If dctThinEdges.ContainsKey(sEdgeID(0)) And dctThinEdges.ContainsKey(sEdgeID(1)) And (Not (dctNoThinEdges.ContainsKey(sEdgeID(0)) Or dctNoThinEdges.ContainsKey(sEdgeID(1)))) Then
 
                             '[061907] jaf: if the two edge ID's are equal we have a problem...
                             If sEdgeID(0) = sEdgeID(1) Then
@@ -1686,7 +1686,7 @@ eh:
                                         pRow = pTC.NextRow
                                     Else
                                         pRow = getAttributesRow(pFeat2, Nothing, pTblPrjEdgeAtt, pEvtLine)
-                                        
+
                                     End If
 
                                     'End If
@@ -1965,10 +1965,10 @@ eh:
         '   Set tblTSeg = Nothing
         pWorkspaceEdit = Nothing
 
-        dctNoThinEdges.RemoveAll()
-        dctThinEdges.RemoveAll()
-        dctNoThinNodes.RemoveAll()
-        dctJcts.RemoveAll()
+        dctNoThinEdges.Clear()
+        dctThinEdges.Clear()
+        dctNoThinNodes.Clear()
+        dctJcts.Clear()
 
         dctNoThinEdges = Nothing
         dctThinEdges = Nothing

@@ -553,52 +553,55 @@ Module test
                                             Select Case lanes
                                                 Case 1
                                                     'HOV 2+
-                                                    mode = "ahijb"
+                                                    mode = "ahijbdmgp"
+
                                                     lanes = 1
                                                 Case 2
                                                     'HOV 3+
-                                                    mode = "aijb"
+                                                    mode = "aijbmgp"
                                                     lanes = 1
 
                                                 Case 3
                                                     '1 lane transit only
-                                                    mode = "b"
+                                                    mode = "bp"
                                                     lanes = 1
 
                                                 Case 4
                                                     '1 lane bat
-                                                    mode = "b"
+                                                    mode = "bp"
                                                     lanes = 1
 
                                                 Case 5
                                                     'One lane HOT
-                                                    mode = "ashijtuvb"
+                                                    mode = "ashijtuvbedmgp"
+
                                                     lanes = 1
 
 
                                                 Case 7
                                                     'Two lanes of HOV
-                                                    mode = "ahijb"
+                                                    mode = "ahijbdmgp"
                                                     lanes = 2
                                                 Case 8
-                                                    mode = "aijb"
+                                                    mode = "aijbmgp"
                                                     lanes = 2
 
                                                 Case 12
                                                     'Two lanes HOT, 2+ free
-                                                    mode = "ashijtuvb"
+                                                    mode = "ashijtuvbedmgp"
+
                                                     lanes = 2
                                                 Case 13
                                                     'Two lanes HOT, 3+ free
-                                                    mode = "ashijtuvb"
+                                                    mode = "ashijtuvbedmgp"
                                                     lanes = 2
                                                 Case 14
                                                     'One lanes HOT, No heavy/med trucks
-                                                    mode = "ashijvb"
+                                                    mode = "ashijvbedmgp"
                                                     lanes = 1
                                                 Case 15
                                                     'Two lanes HOT, No heavy/med trucks
-                                                    mode = "ashijvb"
+                                                    mode = "ashijvbedmgp"
                                                     lanes = 2
 
                                             End Select
@@ -622,7 +625,7 @@ Module test
 
                                     'NOW assign: a iNode, jNode, length, modes, linkType, #lane, functional class
                                     'Bus/Bat lanes New Facility Type & VDF do not Pivot of GP Link
-                                    If mode = "b" And l = 2 Then
+                                    If mode = "bp" And l = 2 Then
                                         sVDF = "9"
                                         sNewFacilityType = "0"
                                         sCap = 0
@@ -1370,7 +1373,8 @@ eh:
 
         wID_Type = " 0 0"
 
-        modeWeave = "ahijstuvbw"
+        'modeWeave = "ahijstuvbw"
+        modeWeave = "ashijtuvbwledmgp"
 
         iwIndex = pFeat.Fields.FindField(lType & "_I")
         jwIndex = pFeat.Fields.FindField(lType & "_J")
@@ -2018,7 +2022,9 @@ eh:
         Dim modeWeave As String
         Dim xxxxx As Integer
 
-        modeWeave = "ashijtuvbw"
+        'modeWeave = "ashijtuvbw"
+        modeWeave = "ashijtuvbwledmgp"
+
         Try
 
 

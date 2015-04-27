@@ -19,7 +19,7 @@ Public Class frmBuildFiles
     Public m_application As IApplication
     Private iName As String
     Private pathName As String
-    Public m_dctReservedNodes As Dictionary
+    Public m_dctReservedNodes As Dictionary(Of Object, Object)
     Public m_Doc As IMxDocument
     Public m_Map As IMap
     Public m_ActiveView As IActiveView
@@ -205,8 +205,8 @@ eh:
             '[021206] hyu: sometime the iName dosn't have extension
             '        tempname = Left(iName, (leng - 4))
             tempname = Replace(iName, ".shp", "", , , vbTextCompare)
-            'StefanRetrace.create_TransitFile5(pathName, transitName)
-            StefanRetrace.create_TransitFile_NewSchema2(pathName, transitName)
+            StefanRetrace.create_TransitFile5(pathName, transitName)
+            'StefanRetrace.create_TransitFile_NewSchema2(pathName, transitName)
         End If
 
         'Me.lblStatus.Text = "BUILDFILE WRITE COMPLETED " & Now()

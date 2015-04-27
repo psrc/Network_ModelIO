@@ -27,7 +27,7 @@ Imports Scripting
 Imports ESRI.ArcGIS.DataSourcesFile
 Module hyuNetFile
     Public Sub SplitFeatureByM(ByVal pFeature As IFeature, ByVal dSplitM As Double, ByVal onode As Long, ByVal NewPoint As IPoint, ByVal lType As String, _
-        ByVal dctEdges As Dictionary, ByVal dctJct As Dictionary, ByVal dctWeaveNodes As Dictionary, ByVal dctWeaveNodes2 As Dictionary, ByRef nodeString As String)
+        ByVal dctEdges As Dictionary(Of Long, Feature), ByVal dctJct As Dictionary(Of Long, Feature), ByVal dctWeaveNodes As Dictionary(Of String, Long), ByVal dctWeaveNodes2 As Dictionary(Of Long, Long), ByRef nodeString As String)
         'dSplitM is the weave length from FromPoint
         'onode is the base node, should coincide w/ one of the ends of pfeature.
         '[080807] hyu:
@@ -290,7 +290,7 @@ Module hyuNetFile
             index = pNewFeature.Fields.FindField(pNewFeature.Class.OIDFieldName)
             spID = pNewFeature.Value(index)
 
-            If dctEdges.Exists(CStr(spID)) Then
+            If dctEdges.ContainsKey(CStr(spID)) Then
                 dctEdges.Item(CStr(spID)) = pNewFeature
             Else
                 dctEdges.Add(CStr(spID), pNewFeature)
@@ -520,12 +520,12 @@ ErrChk:
         'pan frmNetLayer.Refresh
 
         Dim pcount As Long
-        Dim dctReservedNodes As Dictionary  '[042506] hyu: dictionary for reserved nodes: key=PSRCJunctId, item=Emme2Node
+        Dim dctReservedNodes As Dictionary(Of Object, Object)  '[042506] hyu: dictionary for reserved nodes: key=PSRCJunctId, item=Emme2Node
         Dim dctWeaveNodes(3) As clsCollection       '[051106] hyu: dictionary for weave nodes not physically in the ScenarioJunct layer
         Dim dctWeaveNodes2(3) As clsCollection    '[052007] hyu: dictionary for junctions and corresponding weave nodes
 
         Dim lPSRCJctID As Long
-        dctReservedNodes = New Dictionary
+        dctReservedNodes = New Dictionary(Of Object, Object)
 
 
 
@@ -535,9 +535,9 @@ ErrChk:
             dctWeaveNodes2(l) = New clsCollection
         Next l
 
-        Dim dctJcts As Dictionary, dctJoints As Dictionary, dctEdgeID As Dictionary, lMaxEdgeOID As Long
+        Dim dctJcts As Dictionary(Of Long, Feature), dctJoints As Dictionary(Of Object, Object), dctEdgeID As Dictionary(Of Object, Object), lMaxEdgeOID As Long
         Dim pNewFeat As IFeature
-        dctJcts = New Dictionary
+        dctJcts = New Dictionary(Of Long, Feature)
 
         WriteLogLine("start getting all nodes " & Now())
         pcount = 1
@@ -565,7 +565,7 @@ ErrChk:
                 dctJcts.Add(pFeat.Value(lSFld), pFeat)
 
                 If lPSRCJctID + m_Offset <> pFeat.Value(lSFld) Then
-                    If Not dctReservedNodes.Exists(CStr(lPSRCJctID)) Then dctReservedNodes.Add(CStr(lPSRCJctID), CStr(pFeat.Value(lSFld)))
+                    If Not dctReservedNodes.ContainsKey(CStr(lPSRCJctID)) Then dctReservedNodes.Add(CStr(lPSRCJctID), CStr(pFeat.Value(lSFld)))
                 End If
 
                 '************************************
@@ -623,26 +623,26 @@ ErrChk:
         Dim sVDF As String, sCap As String, sFFS As String, sFacType As String, sNewFacilityType As String, sOldFacilityType As String
         Dim lancapfld As String
         Dim intFacType As Integer
-        Dim dctWeaveLinks As Dictionary
+        Dim dctWeaveLinks As Dictionary(Of Object, Object)
         Dim sDir() As String
         Dim sLeng As String
 
-        dctWeaveLinks = New Dictionary
+        dctWeaveLinks = New Dictionary(Of Object, Object)
 
         '[033106] hyu: declare a lookup dictionary for edges in the ModeAttributes table.
         '              This dictionary replaces the query for row count in the ModeAttributes table.
-        Dim dctMAtt As Dictionary, dctEdges As Dictionary
+        Dim dctMAtt As Dictionary(Of Object, Object), dctEdges As Dictionary(Of Long, Feature)
         Dim bEOF As Boolean, lEdgeCt As Long, sEdgeOID As String, sEdgeID As String
-        Dim dctSplit As Dictionary
-        dctSplit = New Dictionary
+        Dim dctSplit As Dictionary(Of Object, Object)
+        dctSplit = New Dictionary(Of Object, Object)
 
         WriteLogLine("start getting all edges and mode attributes " & Now())
         '[062007] jaf: appears to populate dctEdges with intermed. edge features...
         '              ...and dctMAtt with related modeAttributes records
         '              pTblMode is handle to ModeAttributes
         '              m_edgeShp is handle to ScenarioEdges
-        dctEdges = New Dictionary
-        dctMAtt = New Dictionary
+        dctEdges = New Dictionary(Of Long, Feature)
+        dctMAtt = New Dictionary(Of Object, Object)
         getMAtts(m_edgeShp, pTblMode, g_PSRCEdgeID, dctEdges, dctMAtt)
 
         WriteLogLine("start writing links " & Now())
@@ -661,8 +661,8 @@ ErrChk:
 
 
             Do Until bEOF
-                pFeat = dctEdges.Items(lEdgeCt)
-                If dctMAtt.Exists(CStr(pFeat.Value(pFeat.Fields.FindField(g_PSRCEdgeID)))) Then
+                pFeat = dctEdges.Item(lEdgeCt)
+                If dctMAtt.ContainsKey(CStr(pFeat.Value(pFeat.Fields.FindField(g_PSRCEdgeID)))) Then
                     pMRow = dctMAtt.Item(CStr(pFeat.Value(pFeat.Fields.FindField(g_PSRCEdgeID))))
                     'getAttributes row returns proper attributes for the edge feature based on Updated1 field
                     '...from related ModeAttributes, tblLineProjects, or evtLineProjects records (as row obj)
@@ -678,7 +678,7 @@ ErrChk:
                     If getAllLanes(pRow, pMRow, CStr(lType(l))) > 0 Then
                         If pRow.Value(pRow.Fields.FindField("IJLanesGPAM")) > 0 Or pRow.Value(pRow.Fields.FindField("JILanesGPAM")) > 0 Or pRow.Value(pMRow.Fields.FindField("IJLanesGPAM")) > 0 Or pMRow.Value(pRow.Fields.FindField("JILanesGPAM")) > 0 Then
 
-                            createWeaveLink(CStr(lType(l)), pFeat, pRow, wString, nodes, astring, dctReservedNodes, dctWeaveNodes(l).myDictionary, dctWeaveNodes2(l).myDictionary, dctJcts, dctEdges, pstring)
+                            'createWeaveLink(CStr(lType(l)), pFeat, pRow, wString, nodes, astring, dctReservedNodes, dctWeaveNodes(l).myDictionary, dctWeaveNodes2(l).myDictionary, dctJcts, dctEdges, pstring)
                         End If
                     End If
 
@@ -714,7 +714,7 @@ ErrChk:
             bEOF = False
             Do Until bEOF
 
-                pFeat = dctEdges.Items(lEdgeCt)
+                pFeat = dctEdges.Item(lEdgeCt)
 
                 lEdgeCt = lEdgeCt + 1
                 If lEdgeCt = dctEdges.Count Then bEOF = True
@@ -775,7 +775,7 @@ ErrChk:
                     tempAttrib = nodes + " " + CStr(pFeat.Value(Tindex))
 
                     '[033106] hyu: change to lookup a dictionary before doing the query
-                    If Not dctMAtt.Exists(CStr(pFeat.Value(lSFld))) Then
+                    If Not dctMAtt.ContainsKey(CStr(pFeat.Value(lSFld))) Then
                         'jaf--modified to give more info
                         WriteLogLine("DATA ERROR: Edge " & CStr(pFeat.Value(lSFld)) & " is missing in ModeAttributes--GlobalMod.create_NetFile")
                         'move to next one
@@ -953,13 +953,13 @@ ErrChk:
         pevtPoint = Nothing
         pRow = Nothing
 
-        dctEdges.RemoveAll()
-        dctMAtt.RemoveAll()
-        dctReservedNodes.RemoveAll()
-        dctSplit.RemoveAll()
+        dctEdges.Clear()
+        dctMAtt.Clear()
+        dctReservedNodes.Clear()
+        dctSplit.Clear()
         For l = 1 To 3
-            dctWeaveNodes(l).myDictionary.RemoveAll()
-            dctWeaveNodes2(l).myDictionary.RemoveAll()
+            dctWeaveNodes(l).myDictionary.Clear()
+            dctWeaveNodes2(l).myDictionary.Clear()
             dctWeaveNodes(l) = Nothing
             dctWeaveNodes2(l) = Nothing
         Next l
@@ -993,12 +993,12 @@ eh:
         pevtPoint = Nothing
         pRow = Nothing
 
-        If Not dctEdges Is Nothing Then dctEdges.RemoveAll()
-        If Not dctMAtt Is Nothing Then dctMAtt.RemoveAll()
-        dctReservedNodes.RemoveAll()
+        If Not dctEdges Is Nothing Then dctEdges.Clear()
+        If Not dctMAtt Is Nothing Then dctMAtt.Clear()
+        dctReservedNodes.Clear()
         For l = 1 To 3
-            dctWeaveNodes(l).myDictionary.RemoveAll()
-            dctWeaveNodes2(l).myDictionary.RemoveAll()
+            dctWeaveNodes(l).myDictionary.Clear()
+            dctWeaveNodes2(l).myDictionary.Clear()
             dctReservedNodes(l) = Nothing
             dctWeaveNodes(l) = Nothing
         Next l
@@ -1107,7 +1107,7 @@ eh:
 
         getNewFacilityType = CStr(intFacType)
     End Function
-    Private Function getIJNodes(ByVal pFeat As IFeature, ByVal IJorJI As String, ByVal lOffset As Long, ByVal dctRNode As Dictionary) As String
+    Private Function getIJNodes(ByVal pFeat As IFeature, ByVal IJorJI As String, ByVal lOffset As Long, ByVal dctRNode As Dictionary(Of Object, Object)) As String
         'dctRNode is the dictionary of reserved nodes
         Dim fldI As String
         Dim fldJ As String
@@ -1115,15 +1115,15 @@ eh:
         Dim nodeI As Long, nodeJ As Long
         fldI = pFeat.Fields.FindField(g_INode)
         fldJ = pFeat.Fields.FindField(g_JNode)
-        nodeI = pFeat.value(fldI)
-        nodeJ = pFeat.value(fldJ)
-        If dctRNode.Exists(CStr(nodeI)) Then
+        nodeI = pFeat.Value(fldI)
+        nodeJ = pFeat.Value(fldJ)
+        If dctRNode.ContainsKey(CStr(nodeI)) Then
             nodeI = dctRNode.Item(CStr(nodeI))
         Else
             nodeI = nodeI + lOffset
         End If
 
-        If dctRNode.Exists(CStr(nodeJ)) Then
+        If dctRNode.ContainsKey(CStr(nodeJ)) Then
             nodeJ = dctRNode.Item(CStr(nodeJ))
         Else
             nodeJ = nodeJ + lOffset
@@ -1327,7 +1327,7 @@ eh:
         End If
     End Function
     Private Function CreateWeaveNode(ByVal pFeat As IFeature, ByVal nodeID As Long, ByVal IorJ As Integer, ByVal WeaveType As String, ByVal lWeaveNode As Long, _
-    ByVal dctJcts As Dictionary, ByVal dctWNodes As Dictionary, ByVal dctWNodes2 As Dictionary, ByRef nodeString As String)
+    ByVal dctJcts As Dictionary(Of Long, Feature), ByVal dctWNodes As Dictionary(Of String, Long), ByVal dctWNodes2 As Dictionary(Of Long, Long), ByRef nodeString As String)
 
         Dim pPoint As IPoint
         Dim pJFeat As IFeature
@@ -1339,15 +1339,15 @@ eh:
             fld = pFeat.Fields.FindField(WeaveType & "_J")
         End If
 
-        pFeat.value(fld) = lWeaveNode - m_Offset
+        pFeat.Value(fld) = lWeaveNode - m_Offset
         pFeat.Store()
 
         pJFeat = dctJcts.Item(CType(nodeID, Integer))
         pPoint = getWeavenode(pJFeat, WeaveType)
         If nodeString = "" Then
-            nodeString = "a " + CStr(lWeaveNode) + " " + CStr(pPoint.x) + " " + CStr(pPoint.y) + " 0 0 0 0"
+            nodeString = "a " + CStr(lWeaveNode) + " " + CStr(pPoint.X) + " " + CStr(pPoint.Y) + " 0 0 0 0"
         Else
-            nodeString = nodeString + vbCrLf + "a " + CStr(lWeaveNode) + " " + CStr(pPoint.x) + " " + CStr(pPoint.y) + " 0 0 0 0"
+            nodeString = nodeString + vbCrLf + "a " + CStr(lWeaveNode) + " " + CStr(pPoint.X) + " " + CStr(pPoint.Y) + " 0 0 0 0"
         End If
 
         dctWNodes.Add(Str(lWeaveNode), lWeaveNode - m_Offset)
@@ -1363,8 +1363,8 @@ eh:
     End Function
 
 
-    Private Function GetWeaveLinks(ByVal pFeat As IFeature, ByVal pRow As IRow, ByVal pMRow As IRow, ByVal dctWLinks As Dictionary, ByVal dctSplitLinks As Dictionary, _
-        ByVal dctEmme2Nodes As Dictionary, ByVal lType As String, _
+    Private Function GetWeaveLinks(ByVal pFeat As IFeature, ByVal pRow As IRow, ByVal pMRow As IRow, ByVal dctWLinks As Dictionary(Of Object, Object), ByVal dctSplitLinks As Dictionary(Of Object, Object), _
+        ByVal dctEmme2Nodes As Dictionary(Of Object, Object), ByVal lType As String, _
         ByVal direction As String, ByVal tpd As String, ByVal lanes As Double, ByRef wNodes As String, ByRef astring As String, ByRef wString As String)
         'pRow is attribute row in modeAttributes or tblLine or eventLine tables
         'pMRow is exclusively the row in modeAttributes
@@ -1413,8 +1413,8 @@ eh:
 
         iIndex = pFeat.Fields.FindField("INode")
         jIndex = pFeat.Fields.FindField("JNode")
-        INode = pFeat.value(iIndex)
-        JNode = pFeat.value(jIndex)
+        INode = pFeat.Value(iIndex)
+        JNode = pFeat.Value(jIndex)
         index = pFeat.Fields.FindField("UseEmmeN")
 
         If pFeat.Value(index) = 0 Or IsDBNull(pFeat.Value(index)) Then
@@ -1434,7 +1434,7 @@ eh:
         'vdf, capacity, FFT, facility type
 
         Dim sFT As String
-        sFT = pFeat.value(pFeat.Fields.FindField("NewFacilityType"))
+        sFT = pFeat.Value(pFeat.Fields.FindField("NewFacilityType"))
         ijtemp = "1 1800 60 " & sFT
         jitemp = "1 1800 60 " & sFT
 
@@ -1442,7 +1442,7 @@ eh:
         'Only gives WeaveLinks if it has an HOV attribute in the IJ direction for that time of day!!!!!!Need to check to see if
         Dim wLink As String
         wLink = CStr(iwNode) + " " + CStr(INode)
-        If Not dctWLinks.Exists(wLink) And Not dctSplitLinks.Exists(wLink) Then
+        If Not dctWLinks.ContainsKey(wLink) And Not dctSplitLinks.ContainsKey(wLink) Then
             If wString = "" Then
                 wString = "a " + CStr(iwNode) + " " + CStr(INode) + " " + wDefault + " " + ijtemp
             Else
@@ -1462,7 +1462,7 @@ eh:
         End If
 
         wLink = CStr(jwNode) + " " + CStr(JNode)
-        If Not dctWLinks.Exists(wLink) And Not dctSplitLinks.Exists(wLink) Then
+        If Not dctWLinks.ContainsKey(wLink) And Not dctSplitLinks.ContainsKey(wLink) Then
             If wString = "" Then
                 wString = "a " + wLink + " " + wDefault + " " + ijtemp
             Else
@@ -1488,8 +1488,8 @@ eh:
     End Function
     Public Sub createWeaveLink(ByVal lType As String, ByVal pFeat As IFeature, ByVal pAttRow As IRow, _
     ByVal wString As String, ByVal wNodes As String, ByVal astring As String, _
-    ByVal dctEmme2Nodes As Dictionary, ByVal dctWNodes As Dictionary, ByVal dctWNodes2 As Dictionary, _
-    ByVal dctJcts As Dictionary, ByVal dctEdges As Dictionary, ByRef nodeString As String)
+    ByVal dctEmme2Nodes As Dictionary(Of Object, Object), ByVal dctWNodes As Dictionary(Of String, Long), ByVal dctWNodes2 As Dictionary(Of Long, Long), _
+    ByVal dctJcts As Dictionary(Of Long, Feature), ByVal dctEdges As Dictionary(Of Long, Feature), ByRef nodeString As String)
         'dctWNodes is a dictionary of weave node IDs. key=cstr(weavenode id), item=weavenode id
         'dctWNodes2 is a dictionary of Scen_Node and the corresponding weave node. key=Scen_Node, item=weave node
 
@@ -1591,9 +1591,9 @@ eh:
 
                     If fVerboseLog Then WriteLogLine("have weave' " + wNodes)
 
-                    If Not dctWNodes.Exists(CType(iwNode, Integer)) Then
+                    If Not dctWNodes.ContainsKey(CType(iwNode, Integer)) Then
                         '[051507]hyu: if the weavenode is a junction, it's the split point for case 2 during weave link creation
-                        If dctJcts.Exists(CType(iwNode, Integer)) Then
+                        If dctJcts.ContainsKey(CType(iwNode, Integer)) Then
                             pJFeat = dctJcts.Item(CType(iwNode, Integer))
                             pPoint = pJFeat.ShapeCopy
                             updateTransitLines(pPoint)
@@ -1608,13 +1608,13 @@ eh:
                         End If
 
                         dctWNodes.Add(CType(iwNode, Integer), iwNode - m_Offset)
-                        If Not dctWNodes2.Exists(CType(INode, Integer)) Then dctWNodes2.Add(CType(INode, Integer), CType(iwNode, Integer))
+                        If Not dctWNodes2.ContainsKey(CType(INode, Integer)) Then dctWNodes2.Add(CType(INode, Integer), CType(iwNode, Integer))
                     End If
                 End If
 
-                If Not dctWNodes.Exists(CType(jwNode, Integer)) Then
+                If Not dctWNodes.ContainsKey(CType(jwNode, Integer)) Then
                     '[051507]hyu: if the weavenode is a junction, it's the split point for case 2 during weave link creation
-                    If dctJcts.Exists(CType(jwNode, Integer)) Then
+                    If dctJcts.ContainsKey(CType(jwNode, Integer)) Then
                         pJFeat = dctJcts.Item(CType(jwNode, Integer))
                         pPoint = pJFeat.ShapeCopy
                         updateTransitLines(pPoint)
@@ -1630,7 +1630,7 @@ eh:
                     End If
 
                     dctWNodes.Add(CType(jwNode, Integer), CType(jwNode, Integer) - m_Offset)
-                    If Not dctWNodes2.Exists(CType(JNode, Integer)) Then dctWNodes2.Add(CType(JNode, Integer), CType(jwNode, Integer))
+                    If Not dctWNodes2.ContainsKey(CType(JNode, Integer)) Then dctWNodes2.Add(CType(JNode, Integer), CType(jwNode, Integer))
                 End If
                 'have merge nodes and therefore create weave link
                 'so can return now with proper inode and jnode for wltype(i)
@@ -1645,13 +1645,13 @@ eh:
                 For j = 0 To 1
                     bWeaveNodeExists = False
                     If j = 0 Then
-                        If dctWNodes2.Exists(CType(INode, Integer)) = True Then
+                        If dctWNodes2.ContainsKey(CType(INode, Integer)) = True Then
                             pFeat.Value(pFeat.Fields.FindField(lType & "_I")) = dctWNodes2.Item(CType(INode, Integer)) - m_Offset
                             bWeaveNodeExists = True
                             iwNode = dctWNodes2.Item(CType(INode, Integer))
                         End If
                     Else
-                        If dctWNodes2.Exists(CType(JNode, Integer)) Then
+                        If dctWNodes2.ContainsKey(CType(JNode, Integer)) Then
                             pFeat.Value(pFeat.Fields.FindField(lType & "_J")) = dctWNodes2.Item(CType(JNode, Integer)) - m_Offset
                             bWeaveNodeExists = True
                             jwNode = dctWNodes.Item(CType(JNode, Integer))
@@ -1838,7 +1838,7 @@ eh:
         sVDF = CStr(vdf)
         getVDF = sVDF
     End Function
-    Private Function getSplitLink(ByVal pFeat As IFeature, ByVal dctSplitLinks As Dictionary, ByVal dctEmme2Nodes As Dictionary)
+    Private Function getSplitLink(ByVal pFeat As IFeature, ByVal dctSplitLinks As Dictionary(Of Object, Object), ByVal dctEmme2Nodes As Dictionary(Of Object, Object))
         Dim fldI As Long, fldJ As Long, fldOneWay As Long, fldUseEmmN As Long
         Dim fldHOV As Long, fldTR As Long, fldTK As Long
         Dim INode As Long, JNode As Long, oneWay As Integer
@@ -1857,8 +1857,8 @@ eh:
         fldOneWay = pFeat.Fields.FindField(g_OneWay)
         fldUseEmmN = pFeat.Fields.FindField(g_UseEmmeN)
 
-        INode = pFeat.value(fldI)
-        JNode = pFeat.value(fldJ)
+        INode = pFeat.Value(fldI)
+        JNode = pFeat.Value(fldJ)
         If pFeat.Value(fldUseEmmN) = 0 Or IsDBNull(pFeat.Value(fldUseEmmN)) Then
             INode = INode + m_Offset
             JNode = JNode + m_Offset
@@ -1873,7 +1873,7 @@ eh:
             JNode = dctEmme2Nodes.Item(CStr(JNode))
         End If
 
-        oneWay = pFeat.value(fldOneWay)
+        oneWay = pFeat.Value(fldOneWay)
 
         Select Case oneWay
             Case 0
