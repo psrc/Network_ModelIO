@@ -232,7 +232,14 @@ Public Class clsModeAttributes
         Get
             Dim intPos As Integer
             intPos = modeAttributeRow.Fields.FindField(FieldName)
-            FindField = modeAttributeRow.Value(intPos)
+            If IsDBNull(modeAttributeRow.Value(intPos)) Then
+                FindField = 0
+            Else
+                FindField = modeAttributeRow.Value(intPos)
+
+            End If
+
+
         End Get
     End Property
 

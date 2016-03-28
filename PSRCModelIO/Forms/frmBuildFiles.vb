@@ -205,7 +205,12 @@ eh:
             '[021206] hyu: sometime the iName dosn't have extension
             '        tempname = Left(iName, (leng - 4))
             tempname = Replace(iName, ".shp", "", , , vbTextCompare)
-            StefanRetrace.create_TransitFile5(pathName, transitName)
+            If rdoOldTransit.Checked Then
+                StefanRetrace.create_TransitFile5(pathName, transitName)
+            Else
+                StefanRetrace.create_TransitFile_NewSchema2(pathName, transitName)
+            End If
+            'StefanRetrace.create_TransitFile5(pathName, transitName)
             'StefanRetrace.create_TransitFile_NewSchema2(pathName, transitName)
         End If
 

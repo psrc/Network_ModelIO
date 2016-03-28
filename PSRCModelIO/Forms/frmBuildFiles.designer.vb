@@ -44,7 +44,14 @@ Partial Class frmBuildFiles
         Me.rdoOldTAZ = New System.Windows.Forms.RadioButton()
         Me.rdoNewTAZ = New System.Windows.Forms.RadioButton()
         Me.Label5 = New System.Windows.Forms.Label()
+        Me.Label6 = New System.Windows.Forms.Label()
+        Me.rdoOldTransit = New System.Windows.Forms.RadioButton()
+        Me.rdoNewTransit = New System.Windows.Forms.RadioButton()
+        Me.GroupBox2 = New System.Windows.Forms.GroupBox()
+        Me.GroupBox3 = New System.Windows.Forms.GroupBox()
         Me.GroupBox1.SuspendLayout()
+        Me.GroupBox2.SuspendLayout()
+        Me.GroupBox3.SuspendLayout()
         Me.SuspendLayout()
         '
         'txtOffset
@@ -62,7 +69,7 @@ Partial Class frmBuildFiles
         Me.txtYear.ShortcutsEnabled = False
         Me.txtYear.Size = New System.Drawing.Size(100, 20)
         Me.txtYear.TabIndex = 1
-        Me.txtYear.Text = "2010"
+        Me.txtYear.Text = "2014"
         '
         'txtFile
         '
@@ -220,7 +227,7 @@ Partial Class frmBuildFiles
         'rdoOldTAZ
         '
         Me.rdoOldTAZ.AutoSize = True
-        Me.rdoOldTAZ.Location = New System.Drawing.Point(36, 343)
+        Me.rdoOldTAZ.Location = New System.Drawing.Point(25, 42)
         Me.rdoOldTAZ.Name = "rdoOldTAZ"
         Me.rdoOldTAZ.Size = New System.Drawing.Size(68, 17)
         Me.rdoOldTAZ.TabIndex = 16
@@ -231,7 +238,7 @@ Partial Class frmBuildFiles
         '
         Me.rdoNewTAZ.AutoSize = True
         Me.rdoNewTAZ.Checked = True
-        Me.rdoNewTAZ.Location = New System.Drawing.Point(36, 366)
+        Me.rdoNewTAZ.Location = New System.Drawing.Point(25, 65)
         Me.rdoNewTAZ.Name = "rdoNewTAZ"
         Me.rdoNewTAZ.Size = New System.Drawing.Size(71, 17)
         Me.rdoNewTAZ.TabIndex = 17
@@ -242,20 +249,74 @@ Partial Class frmBuildFiles
         'Label5
         '
         Me.Label5.AutoSize = True
-        Me.Label5.Location = New System.Drawing.Point(14, 327)
+        Me.Label5.Location = New System.Drawing.Point(3, 26)
         Me.Label5.Name = "Label5"
         Me.Label5.Size = New System.Drawing.Size(116, 13)
         Me.Label5.TabIndex = 18
         Me.Label5.Text = "Choose TAZ Structure:"
+        '
+        'Label6
+        '
+        Me.Label6.AutoSize = True
+        Me.Label6.Location = New System.Drawing.Point(1, 16)
+        Me.Label6.Name = "Label6"
+        Me.Label6.Size = New System.Drawing.Size(107, 13)
+        Me.Label6.TabIndex = 19
+        Me.Label6.Text = "Choose Transit Build:"
+        '
+        'rdoOldTransit
+        '
+        Me.rdoOldTransit.AutoSize = True
+        Me.rdoOldTransit.Location = New System.Drawing.Point(24, 32)
+        Me.rdoOldTransit.Name = "rdoOldTransit"
+        Me.rdoOldTransit.Size = New System.Drawing.Size(102, 17)
+        Me.rdoOldTransit.TabIndex = 20
+        Me.rdoOldTransit.Text = "Old Transit Build"
+        Me.rdoOldTransit.UseVisualStyleBackColor = True
+        '
+        'rdoNewTransit
+        '
+        Me.rdoNewTransit.AutoSize = True
+        Me.rdoNewTransit.Checked = True
+        Me.rdoNewTransit.Location = New System.Drawing.Point(24, 55)
+        Me.rdoNewTransit.Name = "rdoNewTransit"
+        Me.rdoNewTransit.Size = New System.Drawing.Size(108, 17)
+        Me.rdoNewTransit.TabIndex = 21
+        Me.rdoNewTransit.TabStop = True
+        Me.rdoNewTransit.Text = "New Transit Build"
+        Me.rdoNewTransit.UseVisualStyleBackColor = True
+        '
+        'GroupBox2
+        '
+        Me.GroupBox2.Controls.Add(Me.rdoNewTransit)
+        Me.GroupBox2.Controls.Add(Me.rdoOldTransit)
+        Me.GroupBox2.Controls.Add(Me.Label6)
+        Me.GroupBox2.Location = New System.Drawing.Point(154, 323)
+        Me.GroupBox2.Name = "GroupBox2"
+        Me.GroupBox2.Size = New System.Drawing.Size(148, 92)
+        Me.GroupBox2.TabIndex = 22
+        Me.GroupBox2.TabStop = False
+        Me.GroupBox2.Text = "GroupBox2"
+        '
+        'GroupBox3
+        '
+        Me.GroupBox3.Controls.Add(Me.Label5)
+        Me.GroupBox3.Controls.Add(Me.rdoNewTAZ)
+        Me.GroupBox3.Controls.Add(Me.rdoOldTAZ)
+        Me.GroupBox3.Location = New System.Drawing.Point(12, 323)
+        Me.GroupBox3.Name = "GroupBox3"
+        Me.GroupBox3.Size = New System.Drawing.Size(122, 92)
+        Me.GroupBox3.TabIndex = 23
+        Me.GroupBox3.TabStop = False
+        Me.GroupBox3.Text = "GroupBox3"
         '
         'frmBuildFiles
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(365, 427)
-        Me.Controls.Add(Me.Label5)
-        Me.Controls.Add(Me.rdoNewTAZ)
-        Me.Controls.Add(Me.rdoOldTAZ)
+        Me.Controls.Add(Me.GroupBox3)
+        Me.Controls.Add(Me.GroupBox2)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.Label4)
         Me.Controls.Add(Me.txtSchema)
@@ -272,6 +333,10 @@ Partial Class frmBuildFiles
         Me.Text = "frmBuildFiles"
         Me.GroupBox1.ResumeLayout(False)
         Me.GroupBox1.PerformLayout()
+        Me.GroupBox2.ResumeLayout(False)
+        Me.GroupBox2.PerformLayout()
+        Me.GroupBox3.ResumeLayout(False)
+        Me.GroupBox3.PerformLayout()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -298,4 +363,9 @@ Partial Class frmBuildFiles
     Friend WithEvents rdoNewTAZ As System.Windows.Forms.RadioButton
     Friend WithEvents Label5 As System.Windows.Forms.Label
     Friend WithEvents chkExportShapefiles As System.Windows.Forms.CheckBox
+    Friend WithEvents Label6 As System.Windows.Forms.Label
+    Friend WithEvents rdoOldTransit As System.Windows.Forms.RadioButton
+    Friend WithEvents rdoNewTransit As System.Windows.Forms.RadioButton
+    Friend WithEvents GroupBox2 As System.Windows.Forms.GroupBox
+    Friend WithEvents GroupBox3 As System.Windows.Forms.GroupBox
 End Class

@@ -223,7 +223,8 @@ Module test
                 '[042706] pan:  added parkandride node subtype 7 to test-they need a * also
                 '[090408] pan:  there are junctiontype parkandride subtype 7 that are not currently modeled and
                 '               would bump us over 1200 limit if used, so check EMME2nodeid > 0
-                If (pFeat.Value(Subtype) = 6) Or ((pFeat.Value(Subtype) = 7 And pFeat.Value(Emme2NodeID) > 0)) Then
+                'check to see if scene_node is a zone
+                If pFeat.Value(lSFld) <= m_Offset Then
                     'jaf--centroid junctions (subtype 6) are special cases
                     tempString = "a* " + CStr(pFeat.Value(lSFld)) + " " + CStr(pPoint.X) + " " + CStr(pPoint.Y) + " 0 0 0 0" '+ CStr(pFeat.value(lSFld))
                 Else
@@ -1416,7 +1417,10 @@ eh:
             JNode = pFeat.Value(jIndex)
             index = pFeat.Fields.FindField("UseEmmeN")
 
-            If pFeat.Value(index) = 0 Or IsDBNull(pFeat.Value(index)) Then
+            If IsDBNull(pFeat.Value(index)) Then
+                INode = INode + m_Offset
+                JNode = JNode + m_Offset
+            ElseIf pFeat.Value(index) = 0 Then
                 INode = INode + m_Offset
                 JNode = JNode + m_Offset
             ElseIf pFeat.Value(index) = 1 Then 'inode is emme2id
@@ -2051,9 +2055,14 @@ eh:
 
             '[021706] hyu: shouldn't UseemmeN=3 means both ij nodes are emme2id?
             '    If pFeat.value(index) = 3 Then
-            If pFeat.Value(index) = 0 Or IsDBNull(pFeat.Value(index)) Then
+            If IsDBNull(pFeat.Value(index)) Then
                 INode = INode + m_Offset
                 JNode = JNode + m_Offset
+
+            ElseIf pFeat.Value(index) = 0 Then
+                INode = INode + m_Offset
+                JNode = JNode + m_Offset
+
             ElseIf pFeat.Value(index) = 1 Then 'inode is emme2id
                 JNode = JNode + m_Offset
                 INode = dctEmme2Nodes.Item(CStr(INode))
@@ -2064,6 +2073,7 @@ eh:
                 INode = dctEmme2Nodes.Item(CStr(INode))
                 JNode = dctEmme2Nodes.Item(CStr(JNode))
             End If
+
             If fVerboseLog Then WriteLogLine("linkij " + CStr(INode) + " " + CStr(JNode))
             'if equal 3 then both ia nd j are emmeid's and are ok for scen_node values
             Dim tempnode As Long

@@ -170,6 +170,19 @@ Public Class clsTransitLineAtts
         End Set
     End Property
 
+    Public Property Processing() As Long
+        Get
+            Dim intPos As Integer
+            intPos = _transitLine.Fields.FindField("Processing")
+            Processing = _transitLine.Value(intPos)
+        End Get
+        Set(ByVal value As Long)
+            Dim intPos As Integer
+            intPos = _transitLine.Fields.FindField("Processing")
+            _transitLine.Value(intPos) = value
+            _transitLine.Store()
+        End Set
+    End Property
     Public Property Headway_AM() As Double
         Get
             Dim intPos As Integer

@@ -11944,7 +11944,7 @@ ReleaseObjs:
                                     lngStopDistance = Math.Abs(lngStopDistance)
                                     Dim strSegmentMode As String
                                     strSegmentMode = pFeature.Value(pFeature.Fields.FindField("Modes"))
-                                    If pTransitMode = "r" Then
+                                    If pTransitMode = "rc" Then
                                         stimeFuncID = 4
                                     ElseIf pTransitMode = "f" Then
                                         stimeFuncID = 5
@@ -12618,7 +12618,7 @@ ReleaseObjs:
                                 lngStopDistance = Math.Abs(lngStopDistance)
                                 Dim strSegmentMode As String
                                 strSegmentMode = pFeature.Value(pFeature.Fields.FindField("Modes"))
-                                If pTransitMode = "r" Then
+                                If pTransitMode = "rc" Then
                                     stimeFuncID = 4
                                 ElseIf pTransitMode = "f" Then
                                     stimeFuncID = 5

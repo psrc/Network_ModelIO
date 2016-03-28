@@ -1193,11 +1193,18 @@ eh:
                 'Else
                 'tempString = tempString + " 1"
                 'End If
+                index = pFeatTRoute.Fields.FindField("Processing")
+                If Not IsDBNull(pFeatTRoute.Value(index)) Then
+                    tempString = tempString + " " + CStr(pFeatTRoute.Value(index))
+                Else
+                    tempString = tempString + " 0"
+                End If
+
                 index = pFeatTRoute.Fields.FindField("UL2")
                 If Not IsDBNull(pFeatTRoute.Value(index)) Then
-                    tempString = tempString + " 0" + " " + CStr(pFeatTRoute.Value(index))
+                    tempString = tempString + " " + CStr(pFeatTRoute.Value(index))
                 Else
-                    tempString = tempString + " 0" + " 1"
+                    tempString = tempString + " 1"
                 End If
 
                 index = pFeatTRoute.Fields.FindField("Operator")
@@ -1368,7 +1375,7 @@ eh:
                     End If
 
                     If dctTransitPoints.ContainsKey(intPrevTN + 1) Then
-                        If dctTransitPoints.Item(intPrevTN + 1) = pRow.Value(fldJNode) Then
+                        If dctTransitPoints.Count <> (intPrevTN + 1) And dctTransitPoints.Item(intPrevTN + 1) = pRow.Value(fldJNode) Then
                             sDwtStop = " " & strDwell
                         Else
                             sDwtStop = " dwt=#.00"
@@ -1456,11 +1463,9 @@ eh:
                                     lngStopDistance = Math.Abs(lngStopDistance)
                                     Dim strSegmentMode As String
                                     strSegmentMode = pFeature.Value(pFeature.Fields.FindField("Modes"))
-                                    If pTransitMode = "r" Then
+                                    If pTransitMode = "r" Or pTransitMode = "c" Or pTransitMode = "f" Then
                                         stimeFuncID = 5
-                                    ElseIf pTransitMode = "f" Then
-                                        stimeFuncID = 5
-                                    ElseIf strSegmentMode = "br" Or strSegmentMode = "bwk" Or strSegmentMode = "b" Or strSegmentMode = "wkb" Then
+                                    ElseIf strSegmentMode = "bp" Or strSegmentMode = "bwlp" Or strSegmentMode = "brp" Or strSegmentMode = "bwp" Then
                                         stimeFuncID = 4
                                     ElseIf lngStopDistance > 7920 Then
                                         stimeFuncID = 14
@@ -2097,7 +2102,7 @@ eh:
                             End If
 
                             If dctTransitPoints.ContainsKey(intPrevTN + 1) Then
-                                If dctTransitPoints.Item(intPrevTN + 1) = pRow.Value(fldJNode) Then
+                                If dctTransitPoints.Count <> (intPrevTN + 1) And dctTransitPoints.Item(intPrevTN + 1) = pRow.Value(fldJNode) Then
                                     sDwtStop = " " & strDwell
                                 Else
                                     sDwtStop = " dwt=#.00"
@@ -2190,11 +2195,9 @@ eh:
                                             lngStopDistance = Math.Abs(lngStopDistance)
                                             Dim strSegmentMode As String
                                             strSegmentMode = pFeature.Value(pFeature.Fields.FindField("Modes"))
-                                            If pTransitMode = "r" Then
+                                            If pTransitMode = "r" Or pTransitMode = "c" Or pTransitMode = "f" Then
                                                 stimeFuncID = 5
-                                            ElseIf pTransitMode = "f" Then
-                                                stimeFuncID = 5
-                                            ElseIf strSegmentMode = "br" Or strSegmentMode = "bwk" Or strSegmentMode = "b" Or strSegmentMode = "wkb" Then
+                                            ElseIf strSegmentMode = "bp" Or strSegmentMode = "bwlp" Or strSegmentMode = "brp" Or strSegmentMode = "bwp" Then
                                                 stimeFuncID = 4
                                             ElseIf lngStopDistance > 7920 Then
                                                 stimeFuncID = 14
@@ -2789,7 +2792,9 @@ eh:
 
         tempString = tempString + " '" + CStr(_clsTransitLineAtts.Description) + "'"
 
-        tempString = tempString + " 0" + " " + CStr(_clsTransitLineAtts.UL2)
+        tempString = tempString + " " + CStr(_clsTransitLineAtts.Processing)
+
+        tempString = tempString + " " + CStr(_clsTransitLineAtts.UL2)
 
         tempString = tempString + " " + CStr(_clsTransitLineAtts.Company)
 
