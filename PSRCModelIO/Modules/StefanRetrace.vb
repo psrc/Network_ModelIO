@@ -1375,7 +1375,7 @@ eh:
                     End If
 
                     If dctTransitPoints.ContainsKey(intPrevTN + 1) Then
-                        If dctTransitPoints.Count <> (intPrevTN + 1) And dctTransitPoints.Item(intPrevTN + 1) = pRow.Value(fldJNode) Then
+                        If dctTransitPoints.Item(intPrevTN + 1) = pRow.Value(fldJNode) Then
                             sDwtStop = " " & strDwell
                         Else
                             sDwtStop = " dwt=#.00"
@@ -1841,6 +1841,10 @@ eh:
             Dim dctMD_JI_HOV As New Dictionary(Of Long, Long)
             Dim dctPM_IJ_HOV As New Dictionary(Of Long, Long)
             Dim dctPM_JI_HOV As New Dictionary(Of Long, Long)
+            Dim dctEV_IJ_HOV As New Dictionary(Of Long, Long)
+            Dim dctEV_JI_HOV As New Dictionary(Of Long, Long)
+            Dim dctNI_IJ_HOV As New Dictionary(Of Long, Long)
+            Dim dctNI_JI_HOV As New Dictionary(Of Long, Long)
             Dim dctNodeString As New Dictionary(Of Long, String)
             Dim pTblPrjEdge As ITable
             Dim pTblMode As ITable
@@ -1858,16 +1862,11 @@ eh:
             getEdgeAtts(m_edgeShp, pTblMode, pTblPrjEdge, g_PSRCEdgeID, dctMAtt)
 
 
-            LoadHOVDict(dctMAtt, dctAM_IJ_HOV, dctAM_JI_HOV, dctMD_IJ_HOV, dctMD_JI_HOV, dctPM_IJ_HOV, dctPM_JI_HOV)
+            LoadHOVDict(dctMAtt, dctAM_IJ_HOV, dctAM_JI_HOV, dctMD_IJ_HOV, dctMD_JI_HOV, dctPM_IJ_HOV, dctPM_JI_HOV, dctEV_IJ_HOV, dctEV_JI_HOV, dctNI_IJ_HOV, dctNI_JI_HOV)
 
             Dim pMARow As IRow
             Dim pEdgeID As Long
             Dim pEdgeIDFilter As IQueryFilter
-            'Dim clsModeAtts As New clsModeAttributes(pMARow)
-            'Dim pMACursor As ICursor
-
-
-
             Dim pQFtlines As IQueryFilter, pQF As IQueryFilter, pQF2 As IQueryFilter
             Dim pFeature As IFeature, pFeatTRoute As IFeature, pFeatE As IFeature
             Dim pFeatCursor As IFeatureCursor
@@ -1877,20 +1876,14 @@ eh:
             Dim i As Long
 
             pQFtlines = New QueryFilter
-            '    pQFtlines.WhereClause = "InServiceDate <= " + CStr(inserviceyear)
-            '    Set pFCtroute = pTLineLayer.Search(pQFtlines, False)
             pFCtroute = pTLineFCls.Search(Nothing, False)
             pFeatTRoute = pFCtroute.NextFeature
 
-            'Dim index As Long
             Dim idIndex As Long, sIndex As Long
-            '    Dim iNode As Long, jNode As Long
-
             'sort transit segment table by LineID and SegOrder, then loop through the sorted rows
             Dim pSort As ITableSort
             Dim dctTransitLine As New Dictionary(Of Long, Feature)
 
-            'dctTransitLine = New Dictionary
             pSort = New TableSort
             pQF = New QueryFilter
 
@@ -1900,28 +1893,19 @@ eh:
                 pQF.WhereClause = "Mid([LineID], 2, 2) = '" & Right(CStr(inserviceyear), 2) & "'"
             End If
 
-            
-
-            'start statusbar
             Dim count As Long
             Dim sLineID As String
-            '    count = pTLineLayer.FeatureClass.featurecount(pQFtlines)
-            count = pTLineFCls.FeatureCount(Nothing)
-            'pStatusBar.ShowProgressBar("Preparing for Transit...", 0, count, 1, True)
-            'jaf--let's keep the user updated
-            'frmNetLayer.lblStatus = "GlobalMod.create_Netfile: Starting Transit Build..."
-            'pan frmNetLayer.Refresh
 
-            'loop through searched transit Lines table, and get all transit info into a dictionary
-            '    idIndex = pTLineLayer.FeatureClass.FindField("LineID")
+            count = pTLineFCls.FeatureCount(Nothing)
             idIndex = pTLineFCls.FindField("LineID")
             sIndex = tblTSeg.FindField("SegOrder")
             Dim x As Long
             Dim y As Long
+            
 
             Dim pTransitMode As String
             Dim intOperator As Integer
-            Dim prevDwtStop As String = Nothing
+
             'Dim intTPCounter As Integer
             Do Until pFeatTRoute Is Nothing
                 'loop through each line and add the feature to a dictionar
@@ -1930,19 +1914,6 @@ eh:
                 If Not dctTransitLine.ContainsKey(sLineID) Then dctTransitLine.Add(sLineID, pFeatTRoute)
                 pFeatTRoute = pFCtroute.NextFeature
 
-                'If Len(sLineID) > 4 Then
-                '    tempString = "c '" + Left(sLineID, 2) + "'" + vbNewLine
-                '    tempString = tempString + "a '" + Mid(sLineID, 3, Len(sLineID) - 2) + "'"
-                'Else
-                '    tempString = "a '" + sLineID + "'"
-                'End If
-                'tempString = "a '" + CStr(pFeatTRoute.value(idIndex)) + "'"
-
-
-
-
-
-                'pStatusBar.StepProgressBar()
             Loop
 
             'now get starting segment
@@ -1970,16 +1941,6 @@ eh:
                 fldUser3 = .FindField("User3")
                 fldUseGP = .FindField("UseGPOnly")
             End With
-
-
-
-            
-            'preLine = pRow.value(pRow.Fields.FindField("LineID"))
-
-
-
-
-
 
 
             'get all nodes in the intermediate layer
@@ -2016,6 +1977,7 @@ eh:
                 If curTransitLine.Headway_MD > 0 Then todList.Add("MD")
                 If curTransitLine.Headway_PM > 0 Then todList.Add("PM")
                 If curTransitLine.Headway_EV > 0 Then todList.Add("EV")
+                If curTransitLine.Headway_NI > 0 Then todList.Add("NI")
 
                 'if ltod is All them we only need to build it once, if it is am then we need to build them for each time period seperateley
                 lTOD = curTransitLine.TimePeriod
@@ -2053,18 +2015,6 @@ eh:
                             GetStopDistances2(lineID, dctStopDistance, tblTSeg, dctTransitPoints)
                         End If
 
-                        'Do Until dctTransitLine.ContainsKey(CStr(lineID))
-                        '    'if transit info doesn't exist, then skip all the records of this line.
-                        '    pRow = pTC.NextRow
-                        '    'pStatusBar.StepProgressBar()
-
-                        '    If pRow Is Nothing Then
-                        '        'Close()
-
-                        '        Exit Sub
-                        '    End If
-                        '    lineID = pRow.Value(fldLineId)
-                        'Loop
 
                         lSegOrder = pRow.Value(fldSegOrder)
 
@@ -2102,7 +2052,7 @@ eh:
                             End If
 
                             If dctTransitPoints.ContainsKey(intPrevTN + 1) Then
-                                If dctTransitPoints.Count <> (intPrevTN + 1) And dctTransitPoints.Item(intPrevTN + 1) = pRow.Value(fldJNode) Then
+                                If dctTransitPoints.Item(intPrevTN + 1) = pRow.Value(fldJNode) Then
                                     sDwtStop = " " & strDwell
                                 Else
                                     sDwtStop = " dwt=#.00"
@@ -2111,7 +2061,7 @@ eh:
                                 WriteLogLine("Line Failure at: " & lineID & " " & intTPCounter + 1)
                             End If
 
-                            'sDwtStop = " " & GetDwellTime2(lineID, intTPCounter)
+
                             'if so, grab the DWT from the DWT dictionary
                         Catch ex As Exception
                             MessageBox.Show(ex.ToString)
@@ -2139,11 +2089,6 @@ eh:
                         If lSegOrder = 1 Then
 
                             'start a new line, then get the transit line info
-
-                            'LineInfo = dctTransitLine.Item(CStr(lineID))
-                            'lTOD = Left(LineInfo, 1)
-                            'LineInfo = Right(LineInfo, Len(LineInfo) - 1)
-
 
                             i = 0
 
@@ -2218,7 +2163,8 @@ eh:
 
                                         'Does the Transit Segment goe in the IJ or JI direciton
                                         'Does the Transit Segment goe in the IJ or JI direciton
-                                        If pFeature.Value(m_edgeShp.FindField("INode")) = curNode Then 'JI
+                                        If pFeature.Value(m_edgeShp.FindField("INode")) = curNode Then 'IJ
+
                                             If Not IsDBNull(pFeature.Value(m_edgeShp.FindField("TR_I"))) Then
 
                                                 'If pFeature.Value(m_edgeShp.FindField("TR_I")) > 0 Then
@@ -2241,8 +2187,7 @@ eh:
                                                             Case Is = "AM"
                                                                 If curTransitLine.Headway_AM > 0 Then
                                                                     If dctAM_IJ_HOV.ContainsKey(pEdgeID) Then
-                                                                        ' clsModeAtts.modeAttributeRow = pMARow
-                                                                        'MsgBox (clsModeAtts.IJLANESHOVAM)
+                                                                       
                                                                         curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
                                                                         nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
                                                                     End If
@@ -2261,7 +2206,20 @@ eh:
                                                                         nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
                                                                     End If
                                                                 End If
-
+                                                            Case Is = "EV"
+                                                                If curTransitLine.Headway_EV > 0 Then
+                                                                    If dctEV_IJ_HOV.ContainsKey(pEdgeID) Then
+                                                                        curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                                                        nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                                                    End If
+                                                                End If
+                                                            Case Is = "NI"
+                                                                If curTransitLine.Headway_NI > 0 Then
+                                                                    If dctNI_IJ_HOV.ContainsKey(pEdgeID) Then
+                                                                        curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                                                        nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                                                    End If
+                                                                End If
                                                         End Select
                                                 End Select
 
@@ -2269,6 +2227,8 @@ eh:
                                             End If
 
                                         Else 'Transit segment goes in the JI direction
+
+
                                             If Not IsDBNull(pFeature.Value(m_edgeShp.FindField("TR_J"))) Then
                                                 'If pFeature.Value(m_edgeShp.FindField("TR_J")) > 0 Then
                                                 'weave nodes from "TR_I" and "TR_J"
@@ -2287,16 +2247,7 @@ eh:
                                                         nextWNode = 0
                                                     Case Else
                                                         pEdgeID = pFeature.Value(m_edgeShp.FindField("PSRCEdgeID"))
-                                                        'pEdgeIDFilter = New QueryFilter
-                                                        'pEdgeIDFilter.WhereClause = "PSRCEdgeID = " & pEdgeID
-                                                        'pMACursor = pModeAtts.Search(pEdgeIDFilter, False)
-                                                        'pMARow = pMACursor.NextRow
-                                                        ' System.Runtime.InteropServices.Marshal.FinalReleaseComObject(pMACursor)
-                                                        ' pMACursor = Nothing
-                                                        'If IsHOV(pMARow, Left(CStr(lineID), 1), 2) Then
-                                                        'curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
-                                                        'nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
-                                                        'End If
+
                                                         Select Case tod
                                                             Case Is = "AM"
                                                                 If curTransitLine.Headway_AM > 0 Then
@@ -2321,7 +2272,20 @@ eh:
                                                                         nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
                                                                     End If
                                                                 End If
-
+                                                            Case Is = "EV"
+                                                                If curTransitLine.Headway_EV > 0 Then
+                                                                    If dctEV_JI_HOV.ContainsKey(pEdgeID) Then
+                                                                        curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                                                        nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                                                    End If
+                                                                End If
+                                                            Case Is = "NI"
+                                                                If curTransitLine.Headway_NI > 0 Then
+                                                                    If dctNI_JI_HOV.ContainsKey(pEdgeID) Then
+                                                                        curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                                                        nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                                                    End If
+                                                                End If
                                                         End Select
                                                 End Select
 
@@ -2338,13 +2302,15 @@ eh:
                                             'if next node is a stop we need to assign it to the previous node since we are one node ahead here!
 
                                             'writeTransitNode(lTOD, " " + CStr(nextWNode) + tempString)
+
                                             If dctTransitPoints.Item(intPrevTN + 1) = pRow.Value(fldJNode) Then
                                                 'sDwtStop = " " & strDwell
                                                 'sDwtStop is set from above and should indicate a stop. We need to apply this to the previous node. 
 
 
                                                 prevNodeString = dctNodeString.Item(intNodeCounter - 1)
-                                                prevNodeString = prevNodeString.Replace(LTrim(prevDwtStop), LTrim(sDwtStop))
+                                                'prevNodeString = prevNodeString.Replace(LTrim(prevDwtStop), LTrim(sDwtStop))
+                                                prevNodeString = prevNodeString.Replace(LTrim("dwt=#.00"), LTrim(sDwtStop))
                                                 dctNodeString.Item(intNodeCounter - 1) = prevNodeString
 
 
@@ -2352,6 +2318,10 @@ eh:
                                                 tempString = " dwt=#.00" + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
 
                                             End If
+
+
+
+
                                             dctNodeString.Add(intNodeCounter, " " + CStr(nextWNode) + tempString)
                                             intNodeCounter = intNodeCounter + 1
                                             bPreWeave = True
@@ -2361,11 +2331,6 @@ eh:
                                             'if yes, have to update last node with proper stop info:
                                             'NodeString = dctNodeString.Item(intNodeCounter - 1)
                                             'prevNodeString = System.Text.RegularExpressions.Regex.Replace(prevNodeString, "dwt=*....", LTrim(dctDwellTimes.Item(intTPCounter - 1)))
-
-
-                                            'prevNodeString = prevNodeString.Replace(LTrim(prevDwtStop), LTrim(dctDwellTimes.Item(intTPCounter - 1)))
-                                            'dctNodeString.Item(intNodeCounter - 1) = prevNodeString
-                                            'End If
 
                                             'see if transit line is entering HOV/Managed lanes, if so, write out I & J Nodes of HOV:
                                             If curWNode > 0 And nextWNode > 0 Then
@@ -2426,11 +2391,13 @@ eh:
 
                                     preNode = curNode
                                     curNode = nextNode
+
+
                                     nextNode = 0
                                     curWNode = 0
                                     preWNode = 0
                                     nextWNode = 0
-                                End If  'lUseGP = 0
+                            End If  'lUseGP = 0
                             End If  'Not dctNodes.Exists(CStr(curNode))
                         End If  'curNode <> preNode
                         pRow = pTC.NextRow
@@ -2452,13 +2419,7 @@ eh:
                                 Exit For
                             End If
 
-
-
-
-
-
                         End If
-                        prevDwtStop = sDwtStop
 
                     Loop
                 Next
@@ -2734,7 +2695,8 @@ eh:
 
 
     End Function
-    Public Function LoadHOVDict(ByVal modeAtts_dct As Dictionary(Of Long, Row), ByVal dctAM_IJHOV As Dictionary(Of Long, Long), ByVal dctAM_JIHOV As Dictionary(Of Long, Long), ByVal dctMD_IJHOV As Dictionary(Of Long, Long), ByVal dctMD_JIHOV As Dictionary(Of Long, Long), Optional ByVal dctPM_IJHOV As Dictionary(Of Long, Long) = Nothing, Optional ByVal dctPM_JIHOV As Dictionary(Of Long, Long) = Nothing)
+    Public Function LoadHOVDict(ByVal modeAtts_dct As Dictionary(Of Long, Row), ByVal dctAM_IJHOV As Dictionary(Of Long, Long), ByVal dctAM_JIHOV As Dictionary(Of Long, Long), ByVal dctMD_IJHOV As Dictionary(Of Long, Long), ByVal dctMD_JIHOV As Dictionary(Of Long, Long), Optional ByVal dctPM_IJHOV As Dictionary(Of Long, Long) = Nothing, Optional ByVal dctPM_JIHOV As Dictionary(Of Long, Long) = Nothing,
+                                Optional ByVal dctEV_IJHOV As Dictionary(Of Long, Long) = Nothing, Optional ByVal dctEV_JIHOV As Dictionary(Of Long, Long) = Nothing, Optional ByVal dctNI_IJHOV As Dictionary(Of Long, Long) = Nothing, Optional ByVal dctNI_JIHOV As Dictionary(Of Long, Long) = Nothing)
         For Each kvp As KeyValuePair(Of Long, Row) In modeAtts_dct
             Dim rowModeAtt As New clsModeAttributes(kvp.Value)
             If rowModeAtt.IJLANESHOVAM > 0 Then
@@ -2749,17 +2711,42 @@ eh:
             If rowModeAtt.JILANESHOVMD > 0 Then
                 dctMD_JIHOV.Add(rowModeAtt.PSRCEDGEID, rowModeAtt.PSRCEDGEID)
             End If
+
+            'PM
             If Not dctPM_IJHOV Is Nothing Then
                 If rowModeAtt.IJLANESHOVPM > 0 Then
                     dctPM_IJHOV.Add(rowModeAtt.PSRCEDGEID, rowModeAtt.PSRCEDGEID)
                 End If
             End If
-            If Not dctPM_IJHOV Is Nothing Then
+            If Not dctPM_JIHOV Is Nothing Then
                 If rowModeAtt.JILANESHOVPM > 0 Then
                     dctPM_JIHOV.Add(rowModeAtt.PSRCEDGEID, rowModeAtt.PSRCEDGEID)
                 End If
             End If
 
+            'Evening
+            If Not dctEV_IJHOV Is Nothing Then
+                If rowModeAtt.IJLANESHOVEV > 0 Then
+                    dctEV_IJHOV.Add(rowModeAtt.PSRCEDGEID, rowModeAtt.PSRCEDGEID)
+                End If
+            End If
+            If Not dctEV_JIHOV Is Nothing Then
+                If rowModeAtt.JILANESHOVEV > 0 Then
+                    dctEV_JIHOV.Add(rowModeAtt.PSRCEDGEID, rowModeAtt.PSRCEDGEID)
+                End If
+            End If
+
+            'Night
+            If Not dctNI_IJHOV Is Nothing Then
+                If rowModeAtt.IJLANESHOVNI > 0 Then
+                    dctNI_IJHOV.Add(rowModeAtt.PSRCEDGEID, rowModeAtt.PSRCEDGEID)
+                End If
+            End If
+            If Not dctNI_JIHOV Is Nothing Then
+                If rowModeAtt.JILANESHOVNI > 0 Then
+                    dctNI_JIHOV.Add(rowModeAtt.PSRCEDGEID, rowModeAtt.PSRCEDGEID)
+                End If
+            End If
         Next
 
 
@@ -2839,7 +2826,10 @@ eh:
                 sLine = GetTransitLineInfo(_clsTransitLineAtts, _clsTransitLineAtts.Headway_EV)
                 PrintLine(4, sLine)
             End If
-
+            If _clsTransitLineAtts.Headway_NI > 0 Then
+                sLine = GetTransitLineInfo(_clsTransitLineAtts, _clsTransitLineAtts.Headway_NI)
+                PrintLine(5, sLine)
+            End If
         Else
             'we cannot build each time of day at once. 
             If currentTimeOfDay = "AM" Then
@@ -2855,7 +2845,7 @@ eh:
                 sLine = GetTransitLineInfo(_clsTransitLineAtts, _clsTransitLineAtts.Headway_EV)
                 PrintLine(4, sLine)
             ElseIf currentTimeOfDay = "NI" Then
-                sLine = GetTransitLineInfo(_clsTransitLineAtts, _clsTransitLineAtts.Headway_EV)
+                sLine = GetTransitLineInfo(_clsTransitLineAtts, _clsTransitLineAtts.Headway_NI)
                 PrintLine(5, sLine)
             End If
         End If
