@@ -481,9 +481,9 @@ ReleaseObjs:
             '        If .Geometry Is Nothing Then Exit Function
             .GeometryField = pFCls.ShapeFieldName
             .SpatialRel = esriSpatialRelEnum.esriSpatialRelIntersects
-            .WhereClause = "(INSERVICEDATE<=" & lModelYear & " AND OUTSERVICEDATE>" & lModelYear _
-                & ") OR (INSERVICEDATE IS NULL AND OUTSERVICEDATE IS NULL) " _
-                & " OR (INSERVICEDATE=0 AND OUTSERVICEDATE=0)"
+            '.WhereClause = "(INSERVICEDATE<=" & lModelYear & " AND OUTSERVICEDATE>" & lModelYear _
+            '& ") OR (INSERVICEDATE IS NULL AND OUTSERVICEDATE IS NULL) " _
+            '& " OR (INSERVICEDATE=0 AND OUTSERVICEDATE=0)"
             'NULL VALUE in the inservicedate and outservicedate indicates it's a new junction created during creating weavelink to split an arterial for serving as weave link
 
         End With
