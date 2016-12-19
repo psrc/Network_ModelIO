@@ -1163,6 +1163,7 @@ ErrChk:
         addField(pOutFCls, "prjRte", esriFieldType.esriFieldTypeString, 20)
         addField(pOutFCls, "shptype", esriFieldType.esriFieldTypeString, 20)
         addField(pOutFCls, "Dissolve", esriFieldType.esriFieldTypeString.esriFieldTypeInteger, , 0)
+        addField(pOutFCls, "CountID", esriFieldType.esriFieldTypeString.esriFieldTypeInteger, , 0)
 
         'Stefan: add a field to flag if the IJ nodes are reversed in the project route
 
@@ -1203,6 +1204,8 @@ ErrChk:
         pIns = pToFCls.Insert(True)
 
         Dim pFeat As IFeature
+        Dim fieldName As String
+        Dim fieldIndex As Integer
         Dim i As Integer, j As Integer
         pFeat = pFromFCS.NextFeature
         Try
@@ -1217,7 +1220,14 @@ ErrChk:
                         '[051407] jaf: cannot assign null values
                         '[051807] hyu: comparing field name to make sure the value is assigned to correct field.
                         If (pFeat.Fields.Field(i).Editable = True) And (pFeat.Fields.Field(i).Type <> esriFieldType.esriFieldTypeGeometry) And Not (IsDBNull(pFeat.Value(i))) Then
-                            .Value(i) = pFeat.Value(pFeat.Fields.FindField(.Fields.Field(i).Name))
+                            fieldName = pFeat.Fields.Field(i).Name
+                            fieldIndex = pFBuf.Fields.FindField(fieldName)
+                            .Value(fieldIndex) = pFeat.Value(i)
+
+
+
+
+                            '.Value(i) = pFeat.Value(pFeat.Fields.FindField(.Fields.Field(i).Name))
                             '                    For j = 1 To pFeat.Fields.FieldCount - 1
                             '                        If UCase(.Fields.field(i).name) = UCase(pFeat.Fields.field(j).name) Then
                             '                            .value(i) = pFeat.value(j)

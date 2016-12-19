@@ -141,6 +141,7 @@ Public Class clsDissolve
         Dim idxMode As Integer, idxLT As Integer, idxFT As Integer
         Dim idxJunctID As Integer, idxEdgeID As Integer
         Dim ifld As Integer
+        Dim idxCountID As Integer
         idxJunctID = m_junctShp.FindField("PSRCJunctID")
         '
         '[122305]pan--revised field names for current SDE layer match
@@ -149,6 +150,7 @@ Public Class clsDissolve
             idxEdgeID = .FindField(g_PSRCEdgeID)
             idIndex = .FindField("PSRC_E2ID")
             upIndex = .FindField("Updated1")
+            idxCountID = .FindField("CountID")
             idxN = .FindField(g_INode)
             idxJ = .FindField(g_JNode)
             idxMode = .FindField(g_Modes)
@@ -483,6 +485,14 @@ Public Class clsDissolve
                                         match = False
                                         WriteLogLine("update diff")
                                     End If
+
+                                    If IsDBNull(pFeat2.Value(idxCountID)) Or IsDBNull(pNextFeat.Value(idxCountID)) Then
+                                    ElseIf pFeat2.Value(idxCountID) <> pNextFeat.Value(idxCountID) Then
+                                        match = False
+                                        WriteLogLine("CountID diff")
+                                    End If
+
+
                                     If IsDBNull(pFeat2.Value(idxMode)) Or IsDBNull(pNextFeat.Value(idxMode)) Then
                                     ElseIf pFeat2.Value(idxMode) <> pNextFeat.Value(idxMode) Then
                                         match = False
@@ -568,7 +578,16 @@ Public Class clsDissolve
                                         'pan Edit session incompatible with Store
                                         'pan 12-16-05 re-inserted store and edge delete
                                         pNewFeat.Value(pNewFeat.Fields.FindField("Dissolve")) = 1
+
+                                        'fix spatial index too small bugy
+                                        Dim pFCLoad As IFeatureClassLoad
+                                        pFCLoad = m_edgeShp
+                                        pFCLoad.LoadOnlyMode = True
+
                                         pNewFeat.Store()
+
+                                        pFCLoad.LoadOnlyMode = False
+
                                         lCreatedEdges = lCreatedEdges + 1
                                         edgesdelete = True
 

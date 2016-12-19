@@ -59,6 +59,7 @@ Module test
         'Dim pathnameAm As String, pathnameM As String, pathnamePm As String, pathnameE As String, pathnameNi As String
         Dim pathTOD(0 To 4) As String
         Dim attribname As String
+        Dim countsName As String
         Dim lType, timePd As ArrayList
         lType = New ArrayList
         timePd = New ArrayList
@@ -86,8 +87,17 @@ Module test
             PrintLine((t + 1), "t nodes init")
         Next t
         attribname = pathnameN + "\" + filenameN + "Attr.txt"
+        'countsName = pathnameN + "\" + filenameN + "count_ids.txt"
 
         FileOpen(6, attribname, OpenMode.Output)
+        'FileOpen(8, countsName, OpenMode.Output)
+        Dim dctScrnCounts As New Dictionary(Of String, String)
+        Dim dctCounts As New Dictionary(Of String, String)
+        Dim scrnCountID As Long = 0
+        Dim countID As Long = 0
+        Dim strCountID As String
+
+
 
 
         'open temp files
@@ -497,6 +507,25 @@ Module test
                             End If
 
                             linkType = getLinkType2(pFeat)
+                            If linkType > 90 Then
+                                scrnCountID = linkType
+                                linkType = 90
+                                If nodes <> "" And Not dctScrnCounts.ContainsKey(nodes) Then
+                                    dctScrnCounts.Add(nodes, CStr(scrnCountID))
+
+                                End If
+                            End If
+
+                            'deal with counts. This is a GP count.
+                            countID = getCountID(pFeat)
+                            If countID > 0 Then
+                                strCountID = CStr(countID) + "G"
+                                If nodes <> "" And Not dctCounts.ContainsKey(nodes) Then
+                                    dctCounts.Add(nodes, strCountID)
+
+                                End If
+                            End If
+                            
 
                             'jaf--all times of day buildfiles get same info up to this point
                             'assign so far a iNode, jNode, length, modes, linkType if not hov
@@ -543,6 +572,21 @@ Module test
                                         GetWeaveLinks2(pFeat, pRow, pMRow, dctWeaveLinks(t), dctSplit, dctReservedNodes, CStr(lType(l)), sDir(i), CStr(timePd(t)), lanes, nodes, astring, wString, dctTODWeaveLinks(t))
                                         '                                length = getWeaveLen(CStr(lType(l))) / 5280 'convert feet to mile
                                         'End If
+                                        If nodes <> "" And scrnCountID > 0 Then
+                                            If Not dctScrnCounts.ContainsKey(nodes) Then
+                                                dctScrnCounts.Add(nodes, CStr(scrnCountID))
+                                            End If
+
+
+                                        End If
+
+                                        If countID > 0 Then
+                                            strCountID = CStr(countID) + "H"
+                                            If nodes <> "" And Not dctCounts.ContainsKey(nodes) Then
+                                                dctCounts.Add(nodes, strCountID)
+
+                                            End If
+                                        End If
 
                                         If l <> 2 Then 'not HOV
                                             lanes = 1
@@ -827,34 +871,41 @@ Module test
         dctReservedNodes = Nothing
 
         '09282011 added following to create vehicle count attribute file
-        Dim strVehicleCounts As String
-        strVehicleCounts = pathnameN + "\" + filenameN + "AWDTCounts.txt"
+        Dim strScreenlineVehicleCounts As String
+        Dim strCounts As String
+        strScreenlineVehicleCounts = pathnameN + "\" + "screenline_count_ids.txt"
+        strCounts = pathnameN + "\" + "count_ids.txt"
 
-        FileOpen(7, strVehicleCounts, OpenMode.Output)
+        FileOpen(7, strScreenlineVehicleCounts, OpenMode.Output)
+        FileOpen(8, strCounts, OpenMode.Output)
 
-        Dim pVehicleCounts As IFeatureLayer
-        pVehicleCounts = get_FeatureLayer3(m_layers(25), m_App)
-        'loop through each row
-        Dim p_vcFeature As IFeature
-        Dim p_vcFCursor As IFeatureCursor
-        Dim tempVCString As String
-        p_vcFCursor = pVehicleCounts.FeatureClass.Search(Nothing, False)
-        p_vcFeature = p_vcFCursor.NextFeature
-        Dim indexInode As Long
-        Dim indexJnode As Long
-        Dim indexAWDT As Long
-        indexInode = p_vcFeature.Fields.FindField("INode")
-        indexJnode = p_vcFeature.Fields.FindField("JNode")
-        indexAWDT = p_vcFeature.Fields.FindField("trucks")
+        'Dim pVehicleCounts As IFeatureLayer
+        'pVehicleCounts = get_FeatureLayer3(m_layers(25), m_App)
+        ''loop through each row
+        'Dim p_vcFeature As IFeature
+        'Dim p_vcFCursor As IFeatureCursor
+        'Dim tempVCString As String
+        'p_vcFCursor = pVehicleCounts.FeatureClass.Search(Nothing, False)
+        'p_vcFeature = p_vcFCursor.NextFeature
+        'Dim indexInode As Long
+        'Dim indexJnode As Long
+        'Dim indexAWDT As Long
+        'indexInode = p_vcFeature.Fields.FindField("INode")
+        'indexJnode = p_vcFeature.Fields.FindField("JNode")
+        'indexAWDT = p_vcFeature.Fields.FindField("trucks")
 
-
-        Do Until p_vcFeature Is Nothing
-            tempString = CType(p_vcFeature.Value(indexInode) + m_Offset, String) & " " & CType(p_vcFeature.Value(indexInode) + m_Offset, String) & " " & CType(p_vcFeature.Value(indexAWDT), String)
+        For Each kvp As KeyValuePair(Of String, String) In dctScrnCounts
+            tempString = kvp.Key & " " & kvp.Value
             PrintLine(7, tempString)
-            p_vcFeature = p_vcFCursor.NextFeature
-        Loop
+        Next
 
-        FileClose(6)
+        For Each kvp As KeyValuePair(Of String, String) In dctCounts
+            tempString = kvp.Key & " " & kvp.Value
+            PrintLine(8, tempString)
+        Next
+        
+        FileClose(7)
+        FileClose(8)
 
 
 
@@ -1356,6 +1407,21 @@ eh:
             getLinkType2 = "90"
         End If
     End Function
+    Private Function getCountID(ByVal pfeat As IFeature) As Long
+        Dim Tindex As Long
+        Tindex = pfeat.Fields.FindField("CountID")
+        If Not IsDBNull(pfeat.Value(Tindex)) Then
+            If pfeat.Value(Tindex) > 0 Then
+                getCountID = pfeat.Value(Tindex)
+            Else
+                getCountID = 0
+            End If
+        End If
+
+
+
+    End Function
+
     Private Function GetWeaveLinks2(ByVal pFeat As IFeature, ByVal pRow As IRow, ByVal pMRow As IRow, ByVal dctWLinks As Dictionary(Of String, String), ByVal dctSplitLinks As Dictionary(Of String, String), _
        ByVal dctEmme2Nodes As Dictionary(Of Long, Long), ByVal lType As String, _
        ByVal direction As String, ByVal tpd As String, ByVal lanes As Double, ByRef wNodes As String, ByRef astring As String, ByRef wString As String, ByVal dctTODWeaveLinks As Dictionary(Of Long, Long))
