@@ -572,14 +572,19 @@ Module test
                                         GetWeaveLinks2(pFeat, pRow, pMRow, dctWeaveLinks(t), dctSplit, dctReservedNodes, CStr(lType(l)), sDir(i), CStr(timePd(t)), lanes, nodes, astring, wString, dctTODWeaveLinks(t))
                                         '                                length = getWeaveLen(CStr(lType(l))) / 5280 'convert feet to mile
                                         'End If
-                                        If nodes <> "" And scrnCountID > 0 Then
-                                            If Not dctScrnCounts.ContainsKey(nodes) Then
+
+                                        linkType = getLinkType2(pFeat)
+                                        If linkType > 90 Then
+                                            scrnCountID = linkType
+                                            linkType = 90
+                                            If nodes <> "" And Not dctScrnCounts.ContainsKey(nodes) Then
                                                 dctScrnCounts.Add(nodes, CStr(scrnCountID))
+
                                             End If
-
-
                                         End If
 
+                                        'deal with counts. This is a GP count.
+                                        countID = getCountID(pFeat)
                                         If countID > 0 Then
                                             strCountID = CStr(countID) + "H"
                                             If nodes <> "" And Not dctCounts.ContainsKey(nodes) Then
@@ -758,6 +763,8 @@ Module test
             'Export ScenarioJunctions
             outJunctions = FeatureClassToShapefile(pathnameN, pFeatlayerJunctions, "junctions")
             addField(outJunctions, "IsZone", esriFieldType.esriFieldTypeInteger)
+            addField(outJunctions, "XCoord", esriFieldType.esriFieldTypeDouble)
+            addField(outJunctions, "YCoord", esriFieldType.esriFieldTypeDouble)
 
             'get a dictionary of ModeAttribute Records for HOV only
             '**********Need to make sure its getting atts from right place- projects!!!!!!!!!!!!!
@@ -769,7 +776,7 @@ Module test
             Dim workspace As IWorkspace = myWorkspaceFactory.OpenFromFile(pathnameN, 0)
             Dim workspaceEdit As IWorkspaceEdit = CType(workspace, IWorkspaceEdit)
             workspaceEdit.StartEditing(False)
-            calcIsZone(outJunctions, m_Offset)
+
             '8/22/12 Stefan
             'Adds Weave/HOV junctions to exported ScenarioJunctions
             'dctWeaveJunctions and dctTODWeaveLinks are populated during build file creation above. All other logic is new and much of it is 
@@ -777,7 +784,7 @@ Module test
             'checking for HOV by TOD is done at least 3 times right now. Once for build, once for Export and once for 
             'transit. 
             AddWeaveJunctions(outJunctions, dctWeaveJunctions)
-
+            calcIsZone_XY(outJunctions, m_Offset)
             workspaceEdit.StopEditOperation()
             workspaceEdit.StopEditing(True)
 
@@ -3197,19 +3204,20 @@ eh:
 
         Loop
     End Sub
-    Public Sub calcIsZone(ByVal junctions As IFeatureClass, ByVal nodeOffSet As Long)
+    Public Sub calcIsZone_XY(ByVal junctions As IFeatureClass, ByVal nodeOffSet As Long)
         'adds a 1 to the IsZone field in the Junctions shapefile if it is a Centroid. 
         Dim pFeature As IFeature
         Dim pFCursor As IFeatureCursor
+        Dim pPoint As IPoint
         Dim indexIsZoneField As Long
         Dim indexScenNode As Long
+        Dim indexXCoord As Long
+        Dim indexYCoord As Long
+
         indexIsZoneField = junctions.FindField("IsZone")
         indexScenNode = junctions.FindField("Scen_Node")
-
-
-
-
-
+        indexXCoord = junctions.FindField("XCoord")
+        indexYCoord = junctions.FindField("YCoord")
 
         pFCursor = junctions.Update(Nothing, False)
         pFeature = pFCursor.NextFeature()
@@ -3220,8 +3228,12 @@ eh:
                 pFeature.Value(indexIsZoneField) = 0
             End If
 
+            pPoint = pFeature.Shape
+            pFeature.Value(indexXCoord) = pPoint.X
+            pFeature.Value(indexYCoord) = pPoint.Y
 
             pFCursor.UpdateFeature(pFeature)
+
             pFeature = pFCursor.NextFeature()
 
         Loop
