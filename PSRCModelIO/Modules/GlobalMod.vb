@@ -12611,126 +12611,126 @@ ReleaseObjs:
 
                         If Not pFeature Is Nothing Then
                             'Do TTF stuff here
-                            If intOperator = 4 Then
-                                'do nothing
-                            Else
-                                'pTransitMode = pFeature.Fields.FindField("NewFacilityType")
-                                lngStopDistance = Math.Abs(lngStopDistance)
-                                Dim strSegmentMode As String
-                                strSegmentMode = pFeature.Value(pFeature.Fields.FindField("Modes"))
-                                If pTransitMode = "rc" Then
-                                    stimeFuncID = 4
-                                ElseIf pTransitMode = "f" Then
-                                    stimeFuncID = 5
-                                ElseIf strSegmentMode = "br" Or strSegmentMode = "bwk" Or strSegmentMode = "b" Or strSegmentMode = "wkb" Then
-                                    stimeFuncID = 4
-                                ElseIf lngStopDistance > 7920 Then
-                                    stimeFuncID = 14
-                                ElseIf (pFeature.Value(pFeature.Fields.FindField("NewFacilityType")) = 1 Or pFeature.Value(pFeature.Fields.FindField("NewFacilityType")) = 2) And lngStopDistance > 2640 Then
-                                    stimeFuncID = 13
-                                ElseIf lngStopDistance > 2640 Then
-                                    stimeFuncID = 12
-                                Else : stimeFuncID = 11
 
-                                End If
+
+
+                            'pTransitMode = pFeature.Fields.FindField("NewFacilityType")
+                            lngStopDistance = Math.Abs(lngStopDistance)
+                            Dim strSegmentMode As String
+                            strSegmentMode = pFeature.Value(pFeature.Fields.FindField("Modes"))
+                            If pTransitMode = "rc" Then
+                                stimeFuncID = 4
+                            ElseIf pTransitMode = "f" Then
+                                stimeFuncID = 5
+                            ElseIf strSegmentMode = "br" Or strSegmentMode = "bwk" Or strSegmentMode = "b" Or strSegmentMode = "wkb" Then
+                                stimeFuncID = 4
+                            ElseIf lngStopDistance > 7920 Then
+                                stimeFuncID = 14
+                            ElseIf (pFeature.Value(pFeature.Fields.FindField("NewFacilityType")) = 1 Or pFeature.Value(pFeature.Fields.FindField("NewFacilityType")) = 2) And lngStopDistance > 2640 Then
+                                stimeFuncID = 13
+                            ElseIf lngStopDistance > 2640 Then
+                                stimeFuncID = 12
+                            Else : stimeFuncID = 11
+
+
                                 stimeFuncID = " ttf=" + stimeFuncID
                             End If
 
 
-                            tempString = sDwtStop + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
-                            tempLastLineString = sDwtStopJ + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+                        tempString = sDwtStop + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
+                        tempLastLineString = sDwtStopJ + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
 
 
-                            'Does the Transit Segment goe in the IJ or JI direciton
-                            If pFeature.Value(m_edgeShp.FindField("INode")) = curNode Then 'JI
-                                If pFeature.Value(m_edgeShp.FindField("TR_I")) > 0 Then
-                                    'weave nodes from "TR_I" and "TR_J"
-                                    curWNode = pFeature.Value(m_edgeShp.FindField("TR_I")) + m_Offset
-                                    nextWNode = pFeature.Value(m_edgeShp.FindField("TR_J")) + m_Offset
-                                    If fVerboseLog Then WriteLogLine("potential weave nodes (TR_J/I) " & preWNode & ", " & curWNode)
-                                Else
-                                    'weave nodes may from "HOV_I/J"
-                                    Select Case pFeature.Value(m_edgeShp.FindField("FacilityType"))
-                                        Case 11, 12, 3, 13, 9
-                                            curWNode = 0
-                                            nextWNode = 0
-                                        Case Else
-                                            pEdgeID = pFeature.Value(m_edgeShp.FindField("PSRCEdgeID"))
-                                            pEdgeIDFilter = New QueryFilter
-                                            pEdgeIDFilter.WhereClause = "PSRCEdgeID = " & pEdgeID
-                                            pMACursor = pModeAtts.Search(pEdgeIDFilter, True)
-                                            pMARow = pMACursor.NextRow
-                                            '111309- Previous code assumed that an edge flagged HOV in ScenarioEdge is HOV for both directions at all times of day
-                                            'the following makes sure the at the edge is HOV for TOD and direction
-                                            If IsHOV(pMARow, Left(CStr(lLineID), 1), 1) Then
-                                                'Set clsModeAtts.modeAttributeRow = pMARow
-                                                'MsgBox (clsModeAtts.IJLANESHOVAM)
-                                                curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
-                                                nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
-                                            End If
-                                    End Select
+                        'Does the Transit Segment goe in the IJ or JI direciton
+                        If pFeature.Value(m_edgeShp.FindField("INode")) = curNode Then 'JI
+                            If pFeature.Value(m_edgeShp.FindField("TR_I")) > 0 Then
+                                'weave nodes from "TR_I" and "TR_J"
+                                curWNode = pFeature.Value(m_edgeShp.FindField("TR_I")) + m_Offset
+                                nextWNode = pFeature.Value(m_edgeShp.FindField("TR_J")) + m_Offset
+                                If fVerboseLog Then WriteLogLine("potential weave nodes (TR_J/I) " & preWNode & ", " & curWNode)
+                            Else
+                                'weave nodes may from "HOV_I/J"
+                                Select Case pFeature.Value(m_edgeShp.FindField("FacilityType"))
+                                    Case 11, 12, 3, 13, 9
+                                        curWNode = 0
+                                        nextWNode = 0
+                                    Case Else
+                                        pEdgeID = pFeature.Value(m_edgeShp.FindField("PSRCEdgeID"))
+                                        pEdgeIDFilter = New QueryFilter
+                                        pEdgeIDFilter.WhereClause = "PSRCEdgeID = " & pEdgeID
+                                        pMACursor = pModeAtts.Search(pEdgeIDFilter, True)
+                                        pMARow = pMACursor.NextRow
+                                        '111309- Previous code assumed that an edge flagged HOV in ScenarioEdge is HOV for both directions at all times of day
+                                        'the following makes sure the at the edge is HOV for TOD and direction
+                                        If IsHOV(pMARow, Left(CStr(lLineID), 1), 1) Then
+                                            'Set clsModeAtts.modeAttributeRow = pMARow
+                                            'MsgBox (clsModeAtts.IJLANESHOVAM)
+                                            curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                            nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                        End If
+                                End Select
 
-                                    If fVerboseLog Then WriteLogLine("potential weave nodes (HOV_J/I) " & curWNode & ", " & nextWNode)
-                                End If
+                                If fVerboseLog Then WriteLogLine("potential weave nodes (HOV_J/I) " & curWNode & ", " & nextWNode)
+                            End If
 
-                            Else 'Transit segment goes in the JI direction
-                                If pFeature.Value(m_edgeShp.FindField("TR_J")) > 0 Then
-                                    'weave nodes from "TR_I" and "TR_J"
-                                    curWNode = pFeature.Value(m_edgeShp.FindField("TR_J")) + m_Offset
-                                    nextWNode = pFeature.Value(m_edgeShp.FindField("TR_I")) + m_Offset
+                        Else 'Transit segment goes in the JI direction
+                            If pFeature.Value(m_edgeShp.FindField("TR_J")) > 0 Then
+                                'weave nodes from "TR_I" and "TR_J"
+                                curWNode = pFeature.Value(m_edgeShp.FindField("TR_J")) + m_Offset
+                                nextWNode = pFeature.Value(m_edgeShp.FindField("TR_I")) + m_Offset
 
-                                    If fVerboseLog Then WriteLogLine("potential weave nodes (TR_I/J) " & curWNode & ", " & nextWNode)
-                                Else
-                                    'weave nodes may from "HOV_I/J"
-                                    Select Case pFeature.Value(m_edgeShp.FindField("FacilityType"))
-                                        Case 11, 12, 3, 13, 9
-                                            curWNode = 0
-                                            nextWNode = 0
-                                        Case Else
-                                            pEdgeID = pFeature.Value(m_edgeShp.FindField("PSRCEdgeID"))
-                                            pEdgeIDFilter = New QueryFilter
-                                            pEdgeIDFilter.WhereClause = "PSRCEdgeID = " & pEdgeID
-                                            pMACursor = pModeAtts.Search(pEdgeIDFilter, True)
-                                            pMARow = pMACursor.NextRow
-                                            If IsHOV(pMARow, Left(CStr(lLineID), 1), 2) Then
-                                                curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
-                                                nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
-                                            End If
-                                    End Select
+                                If fVerboseLog Then WriteLogLine("potential weave nodes (TR_I/J) " & curWNode & ", " & nextWNode)
+                            Else
+                                'weave nodes may from "HOV_I/J"
+                                Select Case pFeature.Value(m_edgeShp.FindField("FacilityType"))
+                                    Case 11, 12, 3, 13, 9
+                                        curWNode = 0
+                                        nextWNode = 0
+                                    Case Else
+                                        pEdgeID = pFeature.Value(m_edgeShp.FindField("PSRCEdgeID"))
+                                        pEdgeIDFilter = New QueryFilter
+                                        pEdgeIDFilter.WhereClause = "PSRCEdgeID = " & pEdgeID
+                                        pMACursor = pModeAtts.Search(pEdgeIDFilter, True)
+                                        pMARow = pMACursor.NextRow
+                                        If IsHOV(pMARow, Left(CStr(lLineID), 1), 2) Then
+                                            curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
+                                            nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
+                                        End If
+                                End Select
 
-                                    If fVerboseLog Then WriteLogLine("potential weave nodes (HOV_I/J) " & preWNode & ", " & curWNode)
-                                End If
-                            End If 'pfeature.value(m_edgeShp.FindField("INode")) = curNode
+                                If fVerboseLog Then WriteLogLine("potential weave nodes (HOV_I/J) " & preWNode & ", " & curWNode)
+                            End If
+                        End If 'pfeature.value(m_edgeShp.FindField("INode")) = curNode
 
-                            If bPreWeave And preWNode = curWNode And curWNode <> 0 Then
+                        If bPreWeave And preWNode = curWNode And curWNode <> 0 Then
+                            writeTransitNode(lTOD, " " + CStr(nextWNode) + tempString)
+                            bPreWeave = True
+                        Else
+                            writeTransitNode(lTOD, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
+                            If curWNode > 0 And nextWNode > 0 Then
+                                writeTransitNode(lTOD, " " + CStr(curWNode) + tempString)
                                 writeTransitNode(lTOD, " " + CStr(nextWNode) + tempString)
                                 bPreWeave = True
                             Else
-                                writeTransitNode(lTOD, " " + CStr(dctNodes.Item(CStr(curNode))) + tempString)
-                                If curWNode > 0 And nextWNode > 0 Then
-                                    writeTransitNode(lTOD, " " + CStr(curWNode) + tempString)
-                                    writeTransitNode(lTOD, " " + CStr(nextWNode) + tempString)
-                                    bPreWeave = True
-                                Else
-                                    bPreWeave = False
-                                End If
+                                bPreWeave = False
                             End If
-                            'sec 072909- fixing DWTs
-                            'lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempString
-                            lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempLastLineString
+                        End If
+                        'sec 072909- fixing DWTs
+                        'lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempString
+                        lastNodeString = " " + CStr(dctNodes.Item(CStr(nextNode))) + tempLastLineString
 
-                            preNode = curNode
-                            preWNode = nextWNode
-                            curWNode = 0
-                            nextWNode = 0
+                        preNode = curNode
+                        preWNode = nextWNode
+                        curWNode = 0
+                        nextWNode = 0
 
-                        Else 'pfeature Is Nothing
-                            If i = 0 Then
-                                WriteLogLine("Data Error: Segment " + CStr(lSegOrder) + " on transit line " + CStr(lLineID) + " underlying TransRefEdge not in service")
-                                WriteLogLine("Skip the rest of line " & lLineID)
-                                i = 1
-                            End If
-                        End If  'Not pfeature Is Nothing
+                    Else 'pfeature Is Nothing
+                        If i = 0 Then
+                            WriteLogLine("Data Error: Segment " + CStr(lSegOrder) + " on transit line " + CStr(lLineID) + " underlying TransRefEdge not in service")
+                            WriteLogLine("Skip the rest of line " & lLineID)
+                            i = 1
+                        End If
+                    End If  'Not pfeature Is Nothing
                     Else    'lUseGP <> 0
                         'GP only
 

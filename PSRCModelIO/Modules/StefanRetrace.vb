@@ -2133,28 +2133,26 @@ eh:
 
                                     If Not pFeature Is Nothing Then
                                         'Do TTF stuff here
-                                        If intOperator = 4 Then
-                                            'do nothing
-                                        Else
+                                        
                                             'pTransitMode = pFeature.Fields.FindField("NewFacilityType")
                                             lngStopDistance = Math.Abs(lngStopDistance)
                                             Dim strSegmentMode As String
                                             strSegmentMode = pFeature.Value(pFeature.Fields.FindField("Modes"))
-                                            If pTransitMode = "r" Or pTransitMode = "c" Or pTransitMode = "f" Then
-                                                stimeFuncID = 5
-                                            ElseIf strSegmentMode = "bp" Or strSegmentMode = "bwlp" Or strSegmentMode = "brp" Or strSegmentMode = "bwp" Then
-                                                stimeFuncID = 4
-                                            ElseIf lngStopDistance > 7920 Then
-                                                stimeFuncID = 14
-                                            ElseIf (pFeature.Value(pFeature.Fields.FindField("NewFacilityType")) = 1 Or pFeature.Value(pFeature.Fields.FindField("NewFacilityType")) = 2) And lngStopDistance > 2640 Then
-                                                stimeFuncID = 13
-                                            ElseIf lngStopDistance > 2640 Then
-                                                stimeFuncID = 12
-                                            Else : stimeFuncID = 11
+                                        If pTransitMode = "r" Or pTransitMode = "c" Or pTransitMode = "f" Then
+                                            stimeFuncID = 5
+                                        ElseIf strSegmentMode = "abp" Or strSegmentMode = "abwlp" Or strSegmentMode = "abrp" Or strSegmentMode = "abwp" Then
+                                            stimeFuncID = 4
+                                        ElseIf lngStopDistance > 7920 Then
+                                            stimeFuncID = 14
+                                        ElseIf (pFeature.Value(pFeature.Fields.FindField("NewFacilityType")) = 1 Or pFeature.Value(pFeature.Fields.FindField("NewFacilityType")) = 2) And lngStopDistance > 2640 Then
+                                            stimeFuncID = 13
+                                        ElseIf lngStopDistance > 2640 Then
+                                            stimeFuncID = 12
+                                        Else : stimeFuncID = 11
 
-                                            End If
-                                            stimeFuncID = " ttf=" + stimeFuncID
                                         End If
+                                            stimeFuncID = " ttf=" + stimeFuncID
+
 
 
                                         tempString = sDwtStop + stimeFuncID + sLayover + sUser1 + sUser2 + sUser3
@@ -2187,7 +2185,7 @@ eh:
                                                             Case Is = "AM"
                                                                 If curTransitLine.Headway_AM > 0 Then
                                                                     If dctAM_IJ_HOV.ContainsKey(pEdgeID) Then
-                                                                       
+
                                                                         curWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_I"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_I")) + m_Offset)
                                                                         nextWNode = IIf(IsDBNull(pFeature.Value(m_edgeShp.FindField("HOV_J"))), 0, pFeature.Value(m_edgeShp.FindField("HOV_J")) + m_Offset)
                                                                     End If

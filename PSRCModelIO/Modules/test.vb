@@ -613,17 +613,17 @@ Module test
 
                                                 Case 3
                                                     '1 lane transit only
-                                                    mode = "bp"
+                                                    mode = "abp"
                                                     lanes = 1
 
                                                 Case 4
                                                     '1 lane bat
-                                                    mode = "bp"
+                                                    mode = "abp"
                                                     lanes = 1
 
                                                 Case 5
                                                     'One lane HOT
-                                                    mode = "ashijtuvbedmgp"
+                                                    mode = "ashijbedmgp"
 
                                                     lanes = 1
 
@@ -635,15 +635,18 @@ Module test
                                                 Case 8
                                                     mode = "aijbmgp"
                                                     lanes = 2
-
+                                                    'Done for plan update, please revisit
+                                                Case 11
+                                                    mode = "ashijtuvbedmgp"
+                                                    lanes = 1
                                                 Case 12
                                                     'Two lanes HOT, 2+ free
-                                                    mode = "ashijtuvbedmgp"
+                                                    mode = "ashijbedmgp"
 
                                                     lanes = 2
                                                 Case 13
                                                     'Two lanes HOT, 3+ free
-                                                    mode = "ashijtuvbedmgp"
+                                                    mode = "ashijbedmgp"
                                                     lanes = 2
                                                 Case 14
                                                     'One lanes HOT, No heavy/med trucks
@@ -675,7 +678,7 @@ Module test
 
                                     'NOW assign: a iNode, jNode, length, modes, linkType, #lane, functional class
                                     'Bus/Bat lanes New Facility Type & VDF do not Pivot of GP Link
-                                    If mode = "bp" And l = 2 Then
+                                    If mode = "abp" And l = 2 Then
                                         sVDF = "9"
                                         sNewFacilityType = "0"
                                         sCap = 0
