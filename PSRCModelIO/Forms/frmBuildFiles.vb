@@ -118,6 +118,29 @@ eh:
 
         'now open the new intermediate edge shp
         m_edgeShp = g_FWS.OpenFeatureClass(m_layers(22)) 'ScenarioEdge
+        m_TransRefEdges = g_FWS.OpenFeatureClass(m_layers(0))
+        Dim pSubType As ISubtypes
+        pSubType = m_TransRefEdges
+
+        '  get  the enumeration of all of the subtypes for this feature class 
+        Dim pEnumSubTypes As IEnumSubtype
+        Dim lSubT As Long
+        Dim sSubT As String
+        pEnumSubTypes = pSubType.Subtypes
+
+        ' loop through all of the subtypes and bring up a message 
+        ' box with each subtype's code and name 
+        sSubT = pEnumSubTypes.Next(lSubT)
+        While Len(sSubT) > 0
+            ' do something. Here we are sending the subtype code and name 
+            ' to a message box 
+            g_FacilityTypeLookup.Add(lSubT, pSubType.SubtypeName(lSubT))
+            sSubT = pEnumSubTypes.Next(lSubT)
+        End While
+
+      
+
+
         pFeatlayerIE.FeatureClass = m_edgeShp
         pFeatSelect = pFeatlayerIE
         pFeatSelect.SelectFeatures(Nothing, esriSelectionResultEnum.esriSelectionResultNew, False)

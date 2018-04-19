@@ -217,5 +217,21 @@ Public Class clsBaseEdgeFeatAttributes
         End Get
 
     End Property
+    Public ReadOnly Property CountID() As Long
+        Get
+            Dim intPos As Integer
+            intPos = _edge.Fields.FindField("CountID")
+            CountID = _edge.Value(intPos)
+        End Get
+
+    End Property
+    Public ReadOnly Property CountyID() As Long
+        Get
+            Dim intPos As Integer
+            intPos = _edge.Fields.FindField("CountyID")
+            CountyID = _edge.Value(intPos)
+        End Get
+
+    End Property
  
 End Class

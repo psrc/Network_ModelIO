@@ -114,11 +114,13 @@ Module test
         Dim tempString As String
         Dim pFeatlayerIE As IFeatureLayer
         Dim pFeatlayerJunctions As IFeatureLayer
-        pFeatlayerJunctions = New FeatureLayer
 
+
+        pFeatlayerJunctions = New FeatureLayer
         pFeatlayerIE = New FeatureLayer
         pFeatlayerIE.FeatureClass = m_edgeShp
         pFeatlayerJunctions.FeatureClass = m_junctShp
+
 
 
         wString = ""
@@ -1703,6 +1705,7 @@ eh:
         Dim dblSpeed As Double
         Dim dblSpeed2 As Double
         Dim lngSpeed As Long
+        Dim strFacTypeName As String
         Tindex = pRow.Fields.FindField(direction + "SpeedLimit")
 
         Dim indexLengthField As Long
@@ -1717,8 +1720,9 @@ eh:
         End If
         dblLength = pFeature.Value(indexLengthField)
 
+        strFacTypeName = g_FacilityTypeLookup(CInt(FacilityType))
 
-        If FacilityType = "14" Or FacilityType = "15" Then
+        If strFacTypeName = "Ferry" Or strFacTypeName = "Passenger Only Ferry" Then
             strName = pFeature.Value(pFeature.Fields.FindField("Fullname"))
             Select Case strName
                 Case "Clinton"
@@ -1893,11 +1897,11 @@ eh:
                     End If
 
             End Select
-        
 
 
 
-        ElseIf FacilityType = "12" Or FacilityType = "11" Or FacilityType = "13" Then
+
+        ElseIf strFacTypeName = "Light Rail" Or FacilityType = "Commuter Rail" Or FacilityType = "Monorail" Then
             If IsDBNull(pFeature.Value(pFeature.Fields.FindField("Processing"))) = False Then
                 dblSpeed = pFeature.Value(pFeature.Fields.FindField("Processing")) / 1000
                 dblSpeed = Round(dblSpeed, 2)
@@ -2007,7 +2011,7 @@ eh:
                 End Select
             End If
 
-        
+
 
 
 
@@ -3375,6 +3379,104 @@ eh:
 
     End Function
 
+    Public Function ExportFeature(ByVal pFromFCS As IFeatureCursor, ByVal pToFCls As IFeatureClass)
 
+        Dim pIns As IFeatureCursor
+        Dim pFBuf As IFeatureBuffer
+
+        pIns = pToFCls.Insert(True)
+
+        Dim pFeat As IFeature
+        Dim fieldName As String
+        Dim fieldIndex As Integer
+        Dim i As Integer, j As Integer
+        pFeat = pFromFCS.NextFeature
+        Try
+
+
+            Do Until pFeat Is Nothing
+
+                pFBuf = pToFCls.CreateFeatureBuffer
+                With pFBuf
+                    .Shape = pFeat.ShapeCopy
+                    For i = 2 To pFromFCS.Fields.FieldCount - 1
+                        '[051407] jaf: cannot assign null values
+                        '[051807] hyu: comparing field name to make sure the value is assigned to correct field.
+                        If (pFeat.Fields.Field(i).Editable = True) And (pFeat.Fields.Field(i).Type <> esriFieldType.esriFieldTypeGeometry) And Not (IsDBNull(pFeat.Value(i))) Then
+                            fieldName = pFeat.Fields.Field(i).Name
+                            fieldIndex = pFBuf.Fields.FindField(fieldName)
+                            If fieldIndex <> -1 Then
+                                .Value(fieldIndex) = pFeat.Value(i)
+                            End If
+
+
+
+
+
+                            '.Value(i) = pFeat.Value(pFeat.Fields.FindField(.Fields.Field(i).Name))
+                            '                    For j = 1 To pFeat.Fields.FieldCount - 1
+                            '                        If UCase(.Fields.field(i).name) = UCase(pFeat.Fields.field(j).name) Then
+                            '                            .value(i) = pFeat.value(j)
+                            '                        End If
+                            '                    Next j
+                        End If
+                    Next i
+                End With
+                pIns.InsertFeature(pFBuf)
+
+                pFeat = pFromFCS.NextFeature
+            Loop
+        Catch ex As Exception
+            MessageBox.Show(ex.ToString)
+        End Try
+        pFBuf = Nothing
+        pIns = Nothing
+        pFromFCS = Nothing
+    End Function
+
+    Public Function CreateScenarioEdge(ByVal pInputFCls As IFeatureClass, ByVal pFWS As IFeatureWorkspace, ByVal OutputName As String) As IFeatureClass
+        Dim pFlds As IFields
+        Dim pClone As IClone
+        pClone = pInputFCls.Fields
+        pFlds = pClone.Clone
+
+        Dim pOutFCls As IFeatureClass
+        pOutFCls = pFWS.CreateFeatureClass(OutputName, pFlds, Nothing, Nothing, esriFeatureType.esriFTSimple, pInputFCls.ShapeFieldName, "")
+
+        addField(pOutFCls, "PSRC_E2ID", esriFieldType.esriFieldTypeInteger, , 0)
+        addField(pOutFCls, "ScenarioID", esriFieldType.esriFieldTypeInteger)
+        addField(pOutFCls, "Scen_Link", esriFieldType.esriFieldTypeInteger)
+
+        addField(pOutFCls, "TR_I", esriFieldType.esriFieldTypeInteger)
+        addField(pOutFCls, "TR_J", esriFieldType.esriFieldTypeInteger)
+        addField(pOutFCls, "HOV_I", esriFieldType.esriFieldTypeInteger)
+        addField(pOutFCls, "HOV_J", esriFieldType.esriFieldTypeInteger)
+        addField(pOutFCls, "TK_I", esriFieldType.esriFieldTypeInteger)
+        addField(pOutFCls, "TK_J", esriFieldType.esriFieldTypeInteger)
+        addField(pOutFCls, "UseEmmeN", esriFieldType.esriFieldTypeInteger)
+        addField(pOutFCls, "SplitHOV", esriFieldType.esriFieldTypeString)
+        addField(pOutFCls, "SplitTR", esriFieldType.esriFieldTypeString)
+        addField(pOutFCls, "SplitTK", esriFieldType.esriFieldTypeString)
+
+        'these fields used to flag that a future project will change the attributes
+        'meaning to not get the attributes from modeAttributes table but instead the tblLine/PointProjects table
+        addField(pOutFCls, "Updated1", esriFieldType.esriFieldTypeString, 10, "No")
+        addField(pOutFCls, "prjRte", esriFieldType.esriFieldTypeString, 20)
+        addField(pOutFCls, "shptype", esriFieldType.esriFieldTypeString, 20)
+        addField(pOutFCls, "Dissolve", esriFieldType.esriFieldTypeString.esriFieldTypeInteger, , 0)
+        addField(pOutFCls, "CountID", esriFieldType.esriFieldTypeString.esriFieldTypeInteger, , 0)
+        addField(pOutFCls, "CountyID", esriFieldType.esriFieldTypeString.esriFieldTypeInteger, , 0)
+        addField(pOutFCls, "StateRoute", esriFieldType.esriFieldTypeString.esriFieldTypeInteger, , 0)
+
+        'Stefan: add a field to flag if the IJ nodes are reversed in the project route
+
+        addField(pOutFCls, "Direction", esriFieldType.esriFieldTypeString.esriFieldTypeInteger, , 0)
+        CreateScenarioEdge = pOutFCls
+
+
+        pOutFCls = Nothing
+        pFlds = Nothing
+        pClone = Nothing
+    End Function
 
 End Module

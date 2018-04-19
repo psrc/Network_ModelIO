@@ -2175,7 +2175,7 @@ eh:
                                             Else
                                                 'weave nodes may from "HOV_I/J"
                                                 Select Case pFeature.Value(m_edgeShp.FindField("FacilityType"))
-                                                    Case 11, 12, 3, 13, 9
+                                                    Case 12, 13, 3, 14, 10
                                                         curWNode = 0
                                                         nextWNode = 0
                                                     Case Else
@@ -2240,7 +2240,7 @@ eh:
                                             Else
                                                 'weave nodes may from "HOV_I/J"
                                                 Select Case pFeature.Value(m_edgeShp.FindField("FacilityType"))
-                                                    Case 11, 12, 3, 13, 9
+                                                    Case 12, 13, 3, 14, 10
                                                         curWNode = 0
                                                         nextWNode = 0
                                                     Case Else

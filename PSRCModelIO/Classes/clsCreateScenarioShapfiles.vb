@@ -1630,5 +1630,7 @@ ErrChk:
         pTblLine = Nothing
         pRow = Nothing
     End Sub
+
+   
 End Class
 

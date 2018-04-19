@@ -110,6 +110,8 @@ Module GlobalMod
 
     'intermediate shapefile opened during the Input and Output prep
     Public m_edgeShp As IFeatureClass
+    Public m_TransRefEdges As IFeatureClass
+
     Public m_junctShp As IFeatureClass
     Public pWorkspaceI As IWorkspace
     'attribute dictionaries
@@ -136,6 +138,10 @@ Module GlobalMod
     Public replstr2 As String
     Public SplitM As Boolean
     Public spID As Long
+
+    'global dictionaries
+    Public g_FacilityTypeLookup As New Dictionary(Of Long, String)
+
 
 
 
